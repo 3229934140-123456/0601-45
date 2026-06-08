@@ -1,0 +1,396 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: $spacing-xl $page-padding $spacing-lg;
+  color: $color-text-white;
+
+  .backBtn {
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-md;
+    opacity: 0.9;
+  }
+
+  .projectName {
+    font-size: $font-size-xxl;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-xs;
+    display: block;
+  }
+
+  .projectDesc {
+    font-size: $font-size-sm;
+    opacity: 0.8;
+  }
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-sm;
+  padding: 0 $page-padding;
+  margin-top: -40rpx;
+  margin-bottom: $spacing-md;
+
+  .statCard {
+    background: $color-bg-card;
+    border-radius: $radius-md;
+    padding: $spacing-lg;
+    box-shadow: $shadow-card;
+
+    .statValue {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      color: $color-text-primary;
+      margin-bottom: 4rpx;
+      display: block;
+
+      &.success {
+        color: $color-success;
+      }
+
+      &.danger {
+        color: $color-error;
+      }
+    }
+
+    .statLabel {
+      font-size: $font-size-xs;
+      color: $color-text-tertiary;
+    }
+  }
+}
+
+.section {
+  background: $color-bg-card;
+  margin: 0 $page-padding $spacing-md;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  .sectionHeader {
+    padding: $spacing-lg;
+    border-bottom: 1rpx solid $color-divider;
+
+    .sectionTitle {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+    }
+  }
+}
+
+.trendChart {
+  padding: $spacing-lg;
+
+  .trendBars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 200rpx;
+    margin-bottom: $spacing-md;
+  }
+
+  .trendBarItem {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+
+    .barWrapper {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .bar {
+      width: 32rpx;
+      height: 100%;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      border-radius: 6rpx 6rpx 0 0;
+      overflow: hidden;
+    }
+
+    .barFill {
+      width: 100%;
+      transition: height 0.3s ease;
+
+      &.successBar {
+        background: $color-success;
+      }
+
+      &.failedBar {
+        background: $color-error;
+      }
+    }
+
+    .barLabel {
+      font-size: 20rpx;
+      color: $color-text-tertiary;
+      margin-top: $spacing-sm;
+    }
+  }
+
+  .trendLegend {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-lg;
+
+    .legendItem {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+    }
+
+    .legendDot {
+      width: 16rpx;
+      height: 16rpx;
+      border-radius: 50%;
+
+      &.successDot {
+        background: $color-success;
+      }
+
+      &.failedDot {
+        background: $color-error;
+      }
+    }
+  }
+}
+
+.pipelineList {
+  padding: 0 $spacing-lg $spacing-lg;
+
+  .pipelineCard {
+    padding: $spacing-md;
+    background: $color-bg-block;
+    border-radius: $radius-sm;
+    margin-bottom: $spacing-sm;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &:active {
+      opacity: 0.9;
+    }
+
+    .pipelineInfo {
+      .pipelineHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: $spacing-sm;
+
+        .pipelineName {
+          font-size: $font-size-md;
+          font-weight: $font-weight-medium;
+          color: $color-text-primary;
+        }
+
+        .favoriteBtn {
+          font-size: 32rpx;
+          padding: 4rpx 8rpx;
+        }
+      }
+
+      .pipelineMeta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: $spacing-sm;
+
+        .pipelineBranch {
+          font-size: $font-size-xs;
+          color: $color-text-tertiary;
+        }
+      }
+
+      .pipelineStats {
+        .statsText {
+          font-size: $font-size-xs;
+          color: $color-text-tertiary;
+        }
+      }
+    }
+  }
+}
+
+.recentBuilds {
+  padding: 0 $spacing-lg $spacing-lg;
+
+  .buildItem {
+    display: flex;
+    align-items: center;
+    padding: $spacing-md 0;
+    border-bottom: 1rpx solid $color-divider;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:active {
+      opacity: 0.7;
+    }
+
+    .buildStatus {
+      margin-right: $spacing-md;
+    }
+
+    .buildInfo {
+      flex: 1;
+      min-width: 0;
+
+      .buildTitle {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+        display: block;
+      }
+
+      .buildDesc {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .buildMeta {
+      text-align: right;
+
+      .buildTime {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        display: block;
+        margin-bottom: 4rpx;
+      }
+
+      .buildDuration {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+      }
+    }
+  }
+}
+
+.approvalList {
+  padding: 0 $spacing-lg $spacing-lg;
+
+  .approvalItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md 0;
+    border-bottom: 1rpx solid $color-divider;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:active {
+      opacity: 0.7;
+    }
+
+    .approvalInfo {
+      flex: 1;
+      min-width: 0;
+
+      .approvalTitle {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .approvalDesc {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+    }
+
+    .approvalStatus {
+      font-size: $font-size-xs;
+      padding: 4rpx 12rpx;
+      border-radius: $radius-xs;
+      flex-shrink: 0;
+
+      &.pending {
+        background: $color-warning-bg;
+        color: $color-warning;
+      }
+
+      &.approved {
+        background: $color-success-bg;
+        color: $color-success;
+      }
+
+      &.rejected {
+        background: $color-error-bg;
+        color: $color-error;
+      }
+    }
+  }
+}
+
+.changeList {
+  padding: 0 $spacing-lg $spacing-lg;
+
+  .changeItem {
+    display: flex;
+    align-items: center;
+    padding: $spacing-md 0;
+    border-bottom: 1rpx solid $color-divider;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:active {
+      opacity: 0.7;
+    }
+
+    .changeIcon {
+      font-size: 28rpx;
+      margin-right: $spacing-md;
+    }
+
+    .changeInfo {
+      flex: 1;
+      min-width: 0;
+
+      .changeMessage {
+        font-size: $font-size-sm;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .changeMeta {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+    }
+  }
+}

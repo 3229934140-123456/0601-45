@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, ScrollView, Button, Textarea } from '@tarojs/components'
 import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import classnames from 'classnames'
 import StatusBadge from '@/components/StatusBadge'
 import PhaseItem from '@/components/PhaseItem'
-import { useAppStore } from '@/store/useAppStore'
+import { useAppStore, TEAM_PROJECT_MAP } from '@/store/useAppStore'
 import { formatDuration, formatFullTime, copyToClipboard, generateBuildUrl } from '@/utils'
 import type { Build } from '@/types'
 import styles from './index.module.scss'
@@ -12,12 +12,16 @@ import styles from './index.module.scss'
 const BuildDetailPage: React.FC = () => {
   const router = useRouter()
   const buildId = router.params.buildId || 'build-1'
+  const source = router.params.source || ''
+  const sourceApprovalId = router.params.approvalId || ''
 
   const getBuildById = useAppStore(state => state.getBuildById)
   const retryBuild = useAppStore(state => state.retryBuild)
   const cancelPendingBuild = useAppStore(state => state.cancelPendingBuild)
   const getBuildRemark = useAppStore(state => state.getBuildRemark)
   const setBuildRemark = useAppStore(state => state.setBuildRemark)
+  const approvals = useAppStore(state => state.approvals)
+  const pipelines = useAppStore(state => state.pipelines)
 
   const [build, setBuild] = useState<Build | null>(null)
   const [remark, setRemark] = useState('')
@@ -50,6 +54,31 @@ const BuildDetailPage: React.FC = () => {
     loadBuild()
   })
 
+  const failedPhaseIndex = useMemo(() => {
+    if (!build) return -1
+    return build.phases.findIndex(p => p.status === 'failed')
+  }, [build])
+
+  const relatedApprovals = useMemo(() => {
+    if (!build) return []
+    return approvals.filter(a =>
+      a.pipelineName === build.pipelineName && a.buildNumber === build.buildNumber
+    )
+  }, [build, approvals])
+
+  const sourceInfo = useMemo(() => {
+    if (source === 'approval') {
+      return { label: '返回到审批中心', action: 'back' }
+    }
+    if (source === 'notification') {
+      return { label: '返回到通知', action: 'back' }
+    }
+    if (source === 'change') {
+      return { label: '返回到变更记录', action: 'back' }
+    }
+    return null
+  }, [source])
+
   const handleRetry = () => {
     if (!build) return
     console.log('[BuildDetail] retry build:', build.id)
@@ -63,7 +92,7 @@ const BuildDetailPage: React.FC = () => {
             Taro.showToast({ title: '已触发重试', icon: 'success' })
             setTimeout(() => {
               Taro.redirectTo({
-                url: `/pages/build-detail/index?buildId=${newBuild.id}`
+                url: `/pages/build-detail/index?buildId=${newBuild.id}&source=${source}`
               })
             }, 800)
           } else {
@@ -123,6 +152,10 @@ const BuildDetailPage: React.FC = () => {
     })
   }
 
+  const goToApproval = (approvalId: string) => {
+    Taro.navigateBack()
+  }
+
   const goBack = () => {
     Taro.navigateBack()
   }
@@ -133,6 +166,14 @@ const BuildDetailPage: React.FC = () => {
     })
   }
 
+  const goToProject = (projectId: string) => {
+    Taro.navigateTo({
+      url: `/pages/project-detail/index?projectId=${projectId}`
+    })
+  }
+
+  const isFailedOrCancelled = build && (build.status === 'failed' || build.status === 'cancelled')
+
   if (notFound) {
     return (
       <View className={styles.page}>
@@ -142,7 +183,7 @@ const BuildDetailPage: React.FC = () => {
           <Text className={styles.notFoundDesc}>这条构建记录可能已被删除或链接无效</Text>
           <View className={styles.notFoundActions}>
             <Button className={classnames(styles.btn, styles.secondary)} onClick={goBack}>
-              返回
+              {sourceInfo ? sourceInfo.label : '返回'}
             </Button>
             <Button className={classnames(styles.btn, styles.primary)} onClick={goToAllBuilds}>
               查看全部构建
@@ -166,14 +207,21 @@ const BuildDetailPage: React.FC = () => {
 
   return (
     <ScrollView scrollY className={styles.page}>
-      <View className={styles.header}>
+      {sourceInfo && (
+        <View className={styles.sourceBanner} onClick={goBack}>
+          <Text className={styles.sourceIcon}>←</Text>
+          <Text className={styles.sourceText}>{sourceInfo.label}</Text>
+        </View>
+      )}
+
+      <View className={classnames(styles.header, isFailedOrCancelled && styles.headerFailed)}>
         <View className={styles.statusRow}>
           <StatusBadge status={build.status} showDot />
           <Text className={styles.buildNumber}>#{build.buildNumber}</Text>
         </View>
         <Text className={styles.buildTitle}>{build.pipelineName}</Text>
-        <Text className={styles.projectInfo}>
-          {build.projectName} · {build.branch}
+        <Text className={styles.projectInfo} onClick={() => goToProject(build.projectId)}>
+          {build.projectName} · {build.branch} →
         </Text>
         <View className={styles.metaGrid}>
           <View className={styles.metaItem}>
@@ -189,7 +237,68 @@ const BuildDetailPage: React.FC = () => {
             <Text className={styles.label}>触发方式</Text>
           </View>
         </View>
+
+        {isFailedOrCancelled && failedPhaseIndex >= 0 && (
+          <View className={styles.failureSummary}>
+            <Text className={styles.failureIcon}>⚠️</Text>
+            <View className={styles.failureInfo}>
+              <Text className={styles.failureTitle}>
+                失败阶段：{build.phases[failedPhaseIndex].name}
+              </Text>
+              <Text className={styles.failureDesc}>
+                共 {build.phases.filter(p => p.status === 'success').length}/{build.phases.length} 个阶段成功
+              </Text>
+            </View>
+          </View>
+        )}
       </View>
+
+      {isFailedOrCancelled && (
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.title}>🔍 排障摘要</Text>
+          </View>
+          <View className={styles.troubleshootCard}>
+            <View className={styles.troubleshootItem}>
+              <Text className={styles.troubleshootLabel}>失败阶段</Text>
+              <Text className={styles.troubleshootValue}>
+                {failedPhaseIndex >= 0 ? build.phases[failedPhaseIndex].name : '-'}
+              </Text>
+            </View>
+            <View className={styles.troubleshootItem}>
+              <Text className={styles.troubleshootLabel}>相关提交</Text>
+              <Text
+                className={classnames(styles.troubleshootValue, styles.link)}
+                onClick={goToChangeRecord}
+              >
+                {build.commitMessage.slice(0, 30)} →
+              </Text>
+            </View>
+            {relatedApprovals.length > 0 && (
+              <View className={styles.troubleshootItem}>
+                <Text className={styles.troubleshootLabel}>关联审批</Text>
+                <View className={styles.relatedApprovalList}>
+                  {relatedApprovals.map(appr => (
+                    <Text
+                      key={appr.id}
+                      className={classnames(styles.troubleshootValue, styles.link)}
+                      onClick={() => goToApproval(appr.id)}
+                    >
+                      {appr.title} →
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            )}
+            <View className={styles.troubleshootItem}>
+              <Text className={styles.troubleshootLabel}>影响范围</Text>
+              <Text className={styles.troubleshootValue}>
+                {build.projectName} 项目
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       <View className={styles.section}>
         <View className={styles.sectionHeader}>
@@ -197,8 +306,13 @@ const BuildDetailPage: React.FC = () => {
           <Text className={styles.action}>{build.phases.length} 个阶段</Text>
         </View>
         <View className={styles.phaseList}>
-          {build.phases.map(phase => (
-            <PhaseItem key={phase.id} phase={phase} />
+          {build.phases.map((phase, idx) => (
+            <PhaseItem
+              key={phase.id}
+              phase={phase}
+              defaultExpanded={phase.status === 'failed'}
+              highlight={phase.status === 'failed'}
+            />
           ))}
         </View>
       </View>
@@ -267,6 +381,31 @@ const BuildDetailPage: React.FC = () => {
           </View>
         </View>
       </View>
+
+      {relatedApprovals.length > 0 && (
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.title}>关联审批</Text>
+          </View>
+          <View className={styles.relatedApprovalSection}>
+            {relatedApprovals.map(appr => (
+              <View
+                key={appr.id}
+                className={styles.relatedApprovalItem}
+                onClick={() => goToApproval(appr.id)}
+              >
+                <View className={styles.approvalInfo}>
+                  <Text className={styles.approvalTitle}>{appr.title}</Text>
+                  <Text className={styles.approvalMeta}>
+                    {appr.applicant} · {formatFullTime(appr.applyTime)}
+                  </Text>
+                </View>
+                <Text className={styles.approvalStatus}>{appr.status === 'pending' ? '待审批' : appr.status === 'approved' ? '已通过' : '已拒绝'}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
       <View className={styles.bottomBar}>
         <Button

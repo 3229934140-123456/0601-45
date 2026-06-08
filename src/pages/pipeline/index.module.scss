@@ -38,6 +38,31 @@
     }
   }
 
+  .viewSwitch {
+    display: flex;
+    background: $color-bg-block;
+    border-radius: $radius-md;
+    padding: 4rpx;
+    margin-bottom: $spacing-md;
+
+    .viewTab {
+      flex: 1;
+      text-align: center;
+      padding: $spacing-sm 0;
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      border-radius: $radius-sm;
+      transition: all $transition-base;
+
+      &.active {
+        background: $color-bg-card;
+        color: $color-primary;
+        font-weight: $font-weight-semibold;
+        box-shadow: $shadow-card;
+      }
+    }
+  }
+
   .filterTabs {
     display: flex;
     gap: $spacing-md;
@@ -115,6 +140,71 @@
 
 .pipelineList {
   padding: 0 $page-padding;
+}
+
+.projectList {
+  padding: 0 $page-padding;
+
+  .projectCard {
+    background: $color-bg-card;
+    border-radius: $radius-md;
+    padding: $spacing-lg;
+    margin-bottom: $spacing-md;
+    box-shadow: $shadow-card;
+
+    &:active {
+      transform: scale(0.99);
+    }
+
+    .projectHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $spacing-md;
+
+      .projectName {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+      }
+
+      .projectArrow {
+        font-size: $font-size-md;
+        color: $color-text-tertiary;
+      }
+    }
+
+    .projectStats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: $spacing-sm;
+
+      .projectStat {
+        text-align: center;
+
+        .statValue {
+          font-size: $font-size-lg;
+          font-weight: $font-weight-bold;
+          color: $color-text-primary;
+          margin-bottom: 4rpx;
+          display: block;
+
+          &.success {
+            color: $color-success;
+          }
+
+          &.danger {
+            color: $color-error;
+          }
+        }
+
+        .statLabel {
+          font-size: $font-size-xs;
+          color: $color-text-tertiary;
+        }
+      }
+    }
+  }
 }
 
 .emptyState {

@@ -106,6 +106,15 @@
       background: $color-primary-bg;
     }
   }
+
+  &.highlight {
+    box-shadow: 0 0 0 2rpx $color-error;
+    margin-bottom: $spacing-md;
+
+    .header {
+      background: $color-error-bg;
+    }
+  }
 }
 
 @keyframes spin {

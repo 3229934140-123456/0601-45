@@ -8,9 +8,10 @@ import styles from './index.module.scss'
 interface PhaseItemProps {
   phase: BuildPhase
   defaultExpanded?: boolean
+  highlight?: boolean
 }
 
-const PhaseItem: React.FC<PhaseItemProps> = ({ phase, defaultExpanded = false }) => {
+const PhaseItem: React.FC<PhaseItemProps> = ({ phase, defaultExpanded = false, highlight = false }) => {
   const [expanded, setExpanded] = useState(defaultExpanded)
 
   const getStatusIcon = () => {
@@ -33,7 +34,7 @@ const PhaseItem: React.FC<PhaseItemProps> = ({ phase, defaultExpanded = false })
   }
 
   return (
-    <View className={classnames(styles.phaseItem, styles[phase.status])}>
+    <View className={classnames(styles.phaseItem, styles[phase.status], highlight && styles.highlight)}>
       <View className={styles.header} onClick={toggleExpand}>
         <View className={styles.statusIcon}>
           <Text>{getStatusIcon()}</Text>

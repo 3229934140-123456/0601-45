@@ -6,7 +6,8 @@ export default defineAppConfig({
     'pages/notification/index',
     'pages/mine/index',
     'pages/build-detail/index',
-    'pages/change-record/index'
+    'pages/change-record/index',
+    'pages/project-detail/index'
   ],
   window: {
     backgroundTextStyle: 'light',

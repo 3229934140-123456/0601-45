@@ -2,6 +2,17 @@ export type BuildStatus = 'success' | 'failed' | 'running' | 'pending' | 'cancel
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
 
+export type ApprovalRecordStatus = 'pending' | 'approved' | 'rejected'
+
+export interface ApprovalRecord {
+  id: string
+  approver: string
+  status: ApprovalRecordStatus
+  time?: string
+  remark?: string
+  role?: string
+}
+
 export interface Team {
   id: string
   name: string
@@ -78,6 +89,7 @@ export interface Approval {
   impactScope: string
   approvers: string[]
   currentApprover: string
+  approvalRecords: ApprovalRecord[]
 }
 
 export interface Notification {

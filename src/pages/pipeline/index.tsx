@@ -9,14 +9,17 @@ import type { BuildStatus } from '@/types'
 import styles from './index.module.scss'
 
 type TabType = 'all' | 'favorite'
+type ViewType = 'pipeline' | 'project'
 
 const PipelinePage: React.FC = () => {
   const currentTeam = useAppStore(state => state.currentTeam)
   const setCurrentTeam = useAppStore(state => state.setCurrentTeam)
   const pipelines = useAppStore(state => state.pipelines)
+  const builds = useAppStore(state => state.builds)
   const favoritePipelines = useAppStore(state => state.favoritePipelines)
   const isFavorite = useAppStore(state => state.isFavorite)
 
+  const [viewType, setViewType] = useState<ViewType>('pipeline')
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<BuildStatus | 'all'>('all')
@@ -58,8 +61,53 @@ const PipelinePage: React.FC = () => {
     return list
   }, [currentTeam, activeTab, searchText, statusFilter, pipelines, favoritePipelines])
 
+  const projectGroups = useMemo(() => {
+    const projectMap = new Map<string, {
+      projectId: string
+      projectName: string
+      pipelines: typeof filteredPipelines
+      buildCount: number
+      successRate: number
+      failedCount: number
+    }>()
+
+    filteredPipelines.forEach(pipeline => {
+      if (!projectMap.has(pipeline.projectId)) {
+        projectMap.set(pipeline.projectId, {
+          projectId: pipeline.projectId,
+          projectName: pipeline.projectName,
+          pipelines: [],
+          buildCount: 0,
+          successRate: 0,
+          failedCount: 0
+        })
+      }
+      projectMap.get(pipeline.projectId)?.pipelines.push(pipeline)
+    })
+
+    projectMap.forEach((info, projectId) => {
+      const projectBuilds = builds.filter(b => b.projectId === projectId)
+      info.buildCount = projectBuilds.length
+      const successCount = projectBuilds.filter(b => b.status === 'success').length
+      info.failedCount = projectBuilds.filter(b => b.status === 'failed').length
+      info.successRate = info.buildCount > 0
+        ? Math.round((successCount / info.buildCount) * 1000) / 10
+        : 100
+    })
+
+    return Array.from(projectMap.values()).sort((a, b) =>
+      b.buildCount - a.buildCount
+    )
+  }, [filteredPipelines, builds])
+
   const handleTeamChange = (teamId: string) => {
     setCurrentTeam(teamId)
+  }
+
+  const goToProjectDetail = (projectId: string) => {
+    Taro.navigateTo({
+      url: `/pages/project-detail/index?projectId=${projectId}`
+    })
   }
 
   const tabs: { key: TabType; label: string }[] = [
@@ -88,17 +136,33 @@ const PipelinePage: React.FC = () => {
             onInput={e => setSearchText(e.detail.value)}
           />
         </View>
-        <View className={styles.filterTabs}>
-          {tabs.map(tab => (
-            <View
-              key={tab.key}
-              className={classnames(styles.tab, activeTab === tab.key && styles.active)}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              <Text>{tab.label}</Text>
-            </View>
-          ))}
+        <View className={styles.viewSwitch}>
+          <View
+            className={classnames(styles.viewTab, viewType === 'pipeline' && styles.active)}
+            onClick={() => setViewType('pipeline')}
+          >
+            <Text>流水线</Text>
+          </View>
+          <View
+            className={classnames(styles.viewTab, viewType === 'project' && styles.active)}
+            onClick={() => setViewType('project')}
+          >
+            <Text>项目</Text>
+          </View>
         </View>
+        {viewType === 'pipeline' && (
+          <View className={styles.filterTabs}>
+            {tabs.map(tab => (
+              <View
+                key={tab.key}
+                className={classnames(styles.tab, activeTab === tab.key && styles.active)}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                <Text>{tab.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
       <View className={styles.teamFilter}>
@@ -113,30 +177,78 @@ const PipelinePage: React.FC = () => {
         ))}
       </View>
 
-      <View className={styles.statusFilter}>
-        {statusList.map(status => (
-          <View
-            key={status.key}
-            className={classnames(styles.statusTag, statusFilter === status.key && styles.active)}
-            onClick={() => setStatusFilter(status.key)}
-          >
-            <Text>{status.label}</Text>
-          </View>
-        ))}
-      </View>
+      {viewType === 'pipeline' && (
+        <View className={styles.statusFilter}>
+          {statusList.map(status => (
+            <View
+              key={status.key}
+              className={classnames(styles.statusTag, statusFilter === status.key && styles.active)}
+              onClick={() => setStatusFilter(status.key)}
+            >
+              <Text>{status.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
-      <View className={styles.pipelineList}>
-        {filteredPipelines.length > 0 ? (
-          filteredPipelines.map(pipeline => (
-            <PipelineCard key={pipeline.id} pipeline={pipeline} />
-          ))
-        ) : (
-          <View className={styles.emptyState}>
-            <Text className={styles.icon}>📦</Text>
-            <Text className={styles.text}>暂无流水线</Text>
-          </View>
-        )}
-      </View>
+      {viewType === 'pipeline' ? (
+        <View className={styles.pipelineList}>
+          {filteredPipelines.length > 0 ? (
+            filteredPipelines.map(pipeline => (
+              <PipelineCard key={pipeline.id} pipeline={pipeline} />
+            ))
+          ) : (
+            <View className={styles.emptyState}>
+              <Text className={styles.icon}>📦</Text>
+              <Text className={styles.text}>暂无流水线</Text>
+            </View>
+          )}
+        </View>
+      ) : (
+        <View className={styles.projectList}>
+          {projectGroups.length > 0 ? (
+            projectGroups.map(group => (
+              <View
+                key={group.projectId}
+                className={styles.projectCard}
+                onClick={() => goToProjectDetail(group.projectId)}
+              >
+                <View className={styles.projectHeader}>
+                  <Text className={styles.projectName}>{group.projectName}</Text>
+                  <Text className={styles.projectArrow}>→</Text>
+                </View>
+                <View className={styles.projectStats}>
+                  <View className={styles.projectStat}>
+                    <Text className={styles.statValue}>{group.pipelines.length}</Text>
+                    <Text className={styles.statLabel}>流水线</Text>
+                  </View>
+                  <View className={styles.projectStat}>
+                    <Text className={classnames(styles.statValue, styles.success)}>
+                      {group.successRate}%
+                    </Text>
+                    <Text className={styles.statLabel}>成功率</Text>
+                  </View>
+                  <View className={styles.projectStat}>
+                    <Text className={classnames(styles.statValue, styles.danger)}>
+                      {group.failedCount}
+                    </Text>
+                    <Text className={styles.statLabel}>失败</Text>
+                  </View>
+                  <View className={styles.projectStat}>
+                    <Text className={styles.statValue}>{group.buildCount}</Text>
+                    <Text className={styles.statLabel}>构建</Text>
+                  </View>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View className={styles.emptyState}>
+              <Text className={styles.icon}>📦</Text>
+              <Text className={styles.text}>暂无项目</Text>
+            </View>
+          )}
+        </View>
+      )}
     </ScrollView>
   )
 }

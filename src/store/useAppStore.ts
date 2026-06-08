@@ -43,7 +43,7 @@ interface AppState {
   getBuildById: (buildId: string) => Build | undefined
   getBuildByPipelineAndNumber: (pipelineName: string, buildNumber: number) => Build | undefined
   getApprovalsByTeam: (teamId: string) => Approval[]
-  updateApprovalStatus: (approvalId: string, status: Approval['status']) => boolean
+  updateApprovalStatus: (approvalId: string, status: Approval['status'], remark?: string) => boolean
 
   retryBuild: (buildId: string) => Build | null
   cancelPendingBuild: (buildId: string) => boolean
@@ -175,15 +175,46 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
   },
 
-  updateApprovalStatus: (approvalId: string, status: Approval['status']) => {
-    const { approvals } = get()
+  updateApprovalStatus: (approvalId: string, status: Approval['status'], remark?: string) => {
+    const { approvals, userProfile } = get()
     const approval = approvals.find(a => a.id === approvalId)
-    if (!approval || approval.status === status) return false
+    if (!approval || approval.status !== 'pending') return false
 
     console.log('[Store] updateApprovalStatus:', approvalId, '->', status)
 
+    const currentIdx = approval.approvers.findIndex(a => a === approval.currentApprover)
+    const now = dayjs().format('YYYY-MM-DD HH:mm:ss')
+
+    const updatedRecords = approval.approvalRecords.map((rec, idx) => {
+      if (idx === currentIdx) {
+        return {
+          ...rec,
+          status: status as 'approved' | 'rejected',
+          time: now,
+          remark: remark || (status === 'approved' ? '同意' : '拒绝')
+        }
+      }
+      return rec
+    })
+
+    let newCurrentApprover = approval.currentApprover
+    if (status === 'approved' && currentIdx < approval.approvers.length - 1) {
+      newCurrentApprover = approval.approvers[currentIdx + 1]
+    }
+
+    const finalStatus = status === 'approved' && currentIdx < approval.approvers.length - 1
+      ? 'pending'
+      : status
+
     const updatedApprovals = approvals.map(a =>
-      a.id === approvalId ? { ...a, status } : a
+      a.id === approvalId
+        ? {
+            ...a,
+            status: finalStatus,
+            currentApprover: newCurrentApprover,
+            approvalRecords: updatedRecords
+          }
+        : a
     )
 
     set({ approvals: updatedApprovals })

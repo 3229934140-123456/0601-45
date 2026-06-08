@@ -255,6 +255,147 @@
   }
 }
 
+.sourceBanner {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md $spacing-lg;
+  background: $color-primary-bg;
+  border-bottom: 1rpx solid $color-divider;
+
+  .sourceIcon {
+    font-size: $font-size-md;
+    color: $color-primary;
+    margin-right: $spacing-sm;
+  }
+
+  .sourceText {
+    font-size: $font-size-sm;
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.header {
+  &.headerFailed {
+    background: linear-gradient(180deg, $color-error-bg 0%, $color-bg-card 100%);
+  }
+}
+
+.failureSummary {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+  padding: $spacing-md;
+  background: $color-error-bg;
+  border-radius: $radius-sm;
+  border-left: 6rpx solid $color-error;
+
+  .failureIcon {
+    font-size: 40rpx;
+  }
+
+  .failureInfo {
+    flex: 1;
+
+    .failureTitle {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $color-error;
+      margin-bottom: 4rpx;
+      display: block;
+    }
+
+    .failureDesc {
+      font-size: $font-size-xs;
+      color: $color-error;
+      opacity: 0.8;
+    }
+  }
+}
+
+.troubleshootCard {
+  padding: $spacing-md;
+
+  .troubleshootItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: $spacing-sm 0;
+    border-bottom: 1rpx solid $color-divider;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .troubleshootLabel {
+      font-size: $font-size-sm;
+      color: $color-text-tertiary;
+      flex-shrink: 0;
+    }
+
+    .troubleshootValue {
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      text-align: right;
+      flex: 1;
+      margin-left: $spacing-md;
+
+      &.link {
+        color: $color-primary;
+      }
+    }
+
+    .relatedApprovalList {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4rpx;
+    }
+  }
+}
+
+.relatedApprovalSection {
+  padding: 0 $spacing-md $spacing-md;
+
+  .relatedApprovalItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md;
+    background: $color-bg-block;
+    border-radius: $radius-sm;
+    margin-bottom: $spacing-sm;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .approvalInfo {
+      flex: 1;
+
+      .approvalTitle {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+        display: block;
+      }
+
+      .approvalMeta {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+    }
+
+    .approvalStatus {
+      font-size: $font-size-xs;
+      color: $color-warning;
+      flex-shrink: 0;
+    }
+  }
+}
+
 .notFoundPage {
   display: flex;
   flex-direction: column;
