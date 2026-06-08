@@ -40,9 +40,11 @@ const NotificationPage: React.FC = () => {
 
     if (notification.relatedType === 'build' && notification.relatedId) {
       Taro.navigateTo({
-        url: `/pages/build-detail/index?buildId=${notification.relatedId}`
+        url: `/pages/build-detail/index?buildId=${notification.relatedId}&source=notification`
       })
     } else if (notification.relatedType === 'approval' && notification.relatedId) {
+      const setNavigateApprovalId = useAppStore.getState().setNavigateApprovalId
+      setNavigateApprovalId(notification.relatedId)
       Taro.switchTab({ url: '/pages/approval/index' })
     }
   }

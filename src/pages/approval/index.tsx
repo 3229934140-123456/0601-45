@@ -1,24 +1,56 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
-import Taro, { usePullDownRefresh } from '@tarojs/taro'
+import Taro, { usePullDownRefresh, useRouter, useDidShow } from '@tarojs/taro'
 import classnames from 'classnames'
 import { useAppStore, TEAM_PROJECT_MAP } from '@/store/useAppStore'
-import { getApprovalStatusText, formatTime } from '@/utils'
+import { getApprovalStatusText, formatTime, assessRisk, getRiskLevelText } from '@/utils'
 import type { ApprovalStatus, Approval, ApprovalRecord } from '@/types'
 import styles from './index.module.scss'
 
-type TabType = 'pending' | 'all'
+type TabType = 'pending' | 'all' | 'risk'
 
 const ApprovalPage: React.FC = () => {
+  const router = useRouter()
   const currentTeam = useAppStore(state => state.currentTeam)
   const approvals = useAppStore(state => state.approvals)
   const pipelines = useAppStore(state => state.pipelines)
+  const builds = useAppStore(state => state.builds)
   const getBuildByPipelineAndNumber = useAppStore(state => state.getBuildByPipelineAndNumber)
   const updateApprovalStatus = useAppStore(state => state.updateApprovalStatus)
+  const changeRecords = useAppStore(state => state.changeRecords)
+  const consumeNavigateApprovalId = useAppStore(state => state.consumeNavigateApprovalId)
 
   const [activeTab, setActiveTab] = useState<TabType>('pending')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+
+  useEffect(() => {
+    const approvalId = router.params.approvalId
+    if (approvalId) {
+      setExpandedId(approvalId)
+      setActiveTab('all')
+      setTimeout(() => {
+        const el = document.getElementById(`approval-${approvalId}`)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
+    }
+  }, [router.params])
+
+  useDidShow(() => {
+    const approvalId = consumeNavigateApprovalId()
+    if (approvalId) {
+      setExpandedId(approvalId)
+      setActiveTab('all')
+      setTimeout(() => {
+        const el = document.getElementById(`approval-${approvalId}`)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
+    }
+  })
 
   const teamApprovals = useMemo(() => {
     let list = approvals
@@ -40,9 +72,37 @@ const ApprovalPage: React.FC = () => {
     return teamApprovals.length
   }, [teamApprovals])
 
+  const getApprovalRisk = (approval: Approval) => {
+    const build = getBuildByPipelineAndNumber(approval.pipelineName, approval.buildNumber)
+    const changes = changeRecords.filter(c => c.relatedBuildId === build?.id)
+    const changeCount = changes.reduce((sum, c) => sum + c.filesChanged.length, 0)
+    const isCoreModule = approval.impactScope.includes('核心') || approval.impactScope.includes('主链路')
+    return assessRisk({
+      buildStatus: build?.status,
+      changeCount,
+      impactScope: approval.impactScope,
+      isCoreModule
+    })
+  }
+
+  const riskCount = useMemo(() => {
+    return teamApprovals.filter(a => {
+      if (a.status !== 'pending') return false
+      const risk = getApprovalRisk(a)
+      return risk.level === 'high' || risk.level === 'medium'
+    }).length
+  }, [teamApprovals])
+
   const filteredList = useMemo(() => {
     if (activeTab === 'pending') {
       return teamApprovals.filter(a => a.status === 'pending')
+    }
+    if (activeTab === 'risk') {
+      return teamApprovals
+        .filter(a => a.status === 'pending')
+        .map(a => ({ approval: a, risk: getApprovalRisk(a) }))
+        .sort((a, b) => b.risk.score - a.risk.score)
+        .map(item => item.approval)
     }
     return [...teamApprovals].sort((a, b) =>
       new Date(b.applyTime).getTime() - new Date(a.applyTime).getTime()
@@ -191,6 +251,7 @@ const ApprovalPage: React.FC = () => {
 
   const tabs: { key: TabType; label: string; count: number }[] = [
     { key: 'pending', label: '待审批', count: pendingCount },
+    { key: 'risk', label: '发布风险', count: riskCount },
     { key: 'all', label: '全部', count: allCount }
   ]
 
@@ -213,12 +274,23 @@ const ApprovalPage: React.FC = () => {
 
       <View className={styles.approvalList}>
         {filteredList.length > 0 ? (
-          filteredList.map(approval => (
+          filteredList.map(approval => {
+            const risk = getApprovalRisk(approval)
+            const build = getBuildByPipelineAndNumber(approval.pipelineName, approval.buildNumber)
+            const changes = changeRecords.filter(c => c.relatedBuildId === build?.id)
+            const changeCount = changes.reduce((sum, c) => sum + c.filesChanged.length, 0)
+            const riskLevelCap = risk.level.charAt(0).toUpperCase() + risk.level.slice(1)
+            const riskTagClass = styles['risk' + riskLevelCap]
+            const riskBadgeClass = styles['riskBadge' + riskLevelCap]
+
+            return (
             <View
               key={approval.id}
+              id={`approval-${approval.id}`}
               className={classnames(
                 styles.approvalCard,
-                expandedId === approval.id && styles.expanded
+                expandedId === approval.id && styles.expanded,
+                activeTab === 'risk' && risk.level === 'high' && styles.riskHigh
               )}
               onClick={() => handleCardClick(approval)}
             >
@@ -228,6 +300,11 @@ const ApprovalPage: React.FC = () => {
                   <Text className={classnames(styles.statusTag, styles[approval.status])}>
                     {getApprovalStatusText(approval.status)}
                   </Text>
+                  {approval.status === 'pending' && risk.level !== 'low' && (
+                    <Text className={classnames(styles.riskTag, riskTagClass)}>
+                      {getRiskLevelText(risk.level)}
+                    </Text>
+                  )}
                 </View>
                 <Text className={styles.expandIcon}>
                   {expandedId === approval.id ? '▲' : '▼'}
@@ -259,6 +336,52 @@ const ApprovalPage: React.FC = () => {
                     <Text className={styles.sectionLabel}>🎯 影响范围</Text>
                     <Text className={styles.sectionText}>{approval.impactScope}</Text>
                   </View>
+
+                  {approval.status === 'pending' && (
+                    <View className={styles.section}>
+                      <View className={styles.riskHeader}>
+                        <Text className={styles.sectionLabel}>
+                          {risk.level === 'high' ? '⚠️' : risk.level === 'medium' ? '⚡' : '✅'} 发布风险评估
+                        </Text>
+                        <Text className={classnames(styles.riskBadge, riskBadgeClass)}>
+                          {getRiskLevelText(risk.level)} · {risk.score} 分
+                        </Text>
+                      </View>
+                      <View className={styles.riskSummary}>
+                        <View className={styles.riskSummaryItem}>
+                          <Text className={styles.riskSummaryLabel}>关联构建</Text>
+                          <Text className={classnames(
+                            styles.riskSummaryValue,
+                            build?.status === 'failed' && styles.failed
+                          )}>
+                            {build ? (build.status === 'failed' ? '❌ 失败' : build.status === 'success' ? '✅ 成功' : '⏳ 进行中') : '未找到'}
+                          </Text>
+                        </View>
+                        <View className={styles.riskSummaryItem}>
+                          <Text className={styles.riskSummaryLabel}>变更文件</Text>
+                          <Text className={styles.riskSummaryValue}>{changeCount} 个</Text>
+                        </View>
+                        <View className={styles.riskSummaryItem}>
+                          <Text className={styles.riskSummaryLabel}>最近变更</Text>
+                          <Text className={styles.riskSummaryValue}>{changes.length} 次</Text>
+                        </View>
+                      </View>
+                      {risk.factors.length > 0 && (
+                        <View className={styles.riskFactors}>
+                          <Text className={styles.riskFactorsTitle}>风险依据</Text>
+                          {risk.factors.map((factor, idx) => (
+                            <View key={idx} className={styles.riskFactorItem}>
+                              <Text className={styles.riskFactorDot}>•</Text>
+                              <View className={styles.riskFactorContent}>
+                                <Text className={styles.riskFactorLabel}>{factor.label}</Text>
+                                <Text className={styles.riskFactorDesc}>{factor.description}</Text>
+                              </View>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  )}
 
                   <View
                     className={styles.relatedBuild}
@@ -294,8 +417,8 @@ const ApprovalPage: React.FC = () => {
                 </View>
               )}
             </View>
-          ))
-        ) : (
+          )}))
+        : (
           <View className={styles.emptyState}>
             <Text className={styles.emptyIcon}>📋</Text>
             <Text className={styles.emptyText}>

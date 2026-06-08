@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
-import { changeRecords } from '@/data/notifications'
+import classnames from 'classnames'
+import { changeRecords as mockChangeRecords } from '@/data/notifications'
+import { useAppStore } from '@/store/useAppStore'
 import { formatFullTime } from '@/utils'
 import type { ChangeRecord } from '@/types'
 import styles from './index.module.scss'
@@ -9,8 +11,21 @@ import styles from './index.module.scss'
 const ChangeRecordPage: React.FC = () => {
   const router = useRouter()
   const buildId = router.params.buildId
+  const source = router.params.source || ''
+  const changeRecords = useAppStore(state => state.changeRecords)
   const [records, setRecords] = useState<ChangeRecord[]>(changeRecords)
   const [expandedFiles, setExpandedFiles] = useState<Record<string, boolean>>({})
+
+  const sourceInfo = useMemo(() => {
+    if (source === 'build') {
+      return { label: '返回到构建详情', action: 'back' }
+    }
+    return null
+  }, [source])
+
+  const goBack = () => {
+    Taro.navigateBack()
+  }
 
   useEffect(() => {
     console.log('[ChangeRecord] buildId:', buildId)
@@ -31,7 +46,7 @@ const ChangeRecordPage: React.FC = () => {
 
   const goToBuild = (buildId: string, buildNumber: number) => {
     Taro.redirectTo({
-      url: `/pages/build-detail/index?buildId=${buildId}`
+      url: `/pages/build-detail/index?buildId=${buildId}&source=change`
     })
   }
 
@@ -48,6 +63,13 @@ const ChangeRecordPage: React.FC = () => {
 
   return (
     <ScrollView scrollY className={styles.page}>
+      {sourceInfo && (
+        <View className={styles.sourceBanner} onClick={goBack}>
+          <Text className={styles.sourceIcon}>←</Text>
+          <Text className={styles.sourceText}>{sourceInfo.label}</Text>
+        </View>
+      )}
+
       <View className={styles.header}>
         <Text className={styles.title}>变更记录</Text>
         <Text className={styles.subtitle}>共 {records.length} 次提交</Text>

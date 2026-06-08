@@ -78,6 +78,28 @@
     box-shadow: $shadow-float;
   }
 
+  &.riskHigh {
+    border: 2rpx solid $color-error;
+    box-shadow: 0 8rpx 24rpx rgba(245, 63, 63, 0.15);
+  }
+
+  .riskTag {
+    font-size: 20rpx;
+    padding: 4rpx 12rpx;
+    border-radius: $radius-xs;
+    font-weight: $font-weight-medium;
+
+    &.riskHigh {
+      background: $color-error-bg;
+      color: $color-error;
+    }
+
+    &.riskMedium {
+      background: $color-warning-bg;
+      color: $color-warning;
+    }
+  }
+
   .cardHeader {
     display: flex;
     align-items: center;
@@ -179,6 +201,117 @@
       padding: $spacing-md;
       background: $color-bg-block;
       border-radius: $radius-sm;
+    }
+
+    .riskHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $spacing-sm;
+
+      .sectionLabel {
+        margin-bottom: 0;
+      }
+    }
+
+    .riskBadge {
+      font-size: 20rpx;
+      padding: 4rpx 12rpx;
+      border-radius: $radius-xs;
+      font-weight: $font-weight-semibold;
+
+      &.riskBadgeHigh {
+        background: $color-error-bg;
+        color: $color-error;
+      }
+
+      &.riskBadgeMedium {
+        background: $color-warning-bg;
+        color: $color-warning;
+      }
+
+      &.riskBadgeLow {
+        background: $color-success-bg;
+        color: $color-success;
+      }
+    }
+
+    .riskSummary {
+      display: flex;
+      background: $color-bg-block;
+      border-radius: $radius-sm;
+      padding: $spacing-md;
+      margin-bottom: $spacing-md;
+
+      .riskSummaryItem {
+        flex: 1;
+        text-align: center;
+
+        & + .riskSummaryItem {
+          border-left: 1rpx solid $color-divider;
+        }
+      }
+
+      .riskSummaryLabel {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        display: block;
+        margin-bottom: 6rpx;
+      }
+
+      .riskSummaryValue {
+        font-size: $font-size-md;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+
+        &.failed {
+          color: $color-error;
+        }
+      }
+    }
+
+    .riskFactors {
+      .riskFactorsTitle {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        color: $color-text-primary;
+        margin-bottom: $spacing-sm;
+        display: block;
+      }
+
+      .riskFactorItem {
+        display: flex;
+        gap: $spacing-sm;
+        margin-bottom: $spacing-sm;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      .riskFactorDot {
+        color: $color-error;
+        font-size: $font-size-lg;
+        line-height: 1;
+      }
+
+      .riskFactorContent {
+        flex: 1;
+      }
+
+      .riskFactorLabel {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        color: $color-text-primary;
+        display: block;
+        margin-bottom: 4rpx;
+      }
+
+      .riskFactorDesc {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        line-height: 1.5;
+      }
     }
   }
 

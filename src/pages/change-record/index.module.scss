@@ -5,6 +5,21 @@
   background: $color-bg-page;
 }
 
+.sourceBanner {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $page-padding;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: $font-size-sm;
+
+  .sourceIcon {
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+  }
+}
+
 .header {
   background: $color-bg-card;
   padding: $spacing-lg;

@@ -4,7 +4,7 @@ import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import classnames from 'classnames'
 import StatusBadge from '@/components/StatusBadge'
 import { useAppStore } from '@/store/useAppStore'
-import { formatDuration, formatTime, getApprovalStatusText } from '@/utils'
+import { formatDuration, formatTime, getApprovalStatusText, assessRisk, getRiskLevelText } from '@/utils'
 import styles from './index.module.scss'
 
 const ProjectDetailPage: React.FC = () => {
@@ -14,9 +14,12 @@ const ProjectDetailPage: React.FC = () => {
   const pipelines = useAppStore(state => state.pipelines)
   const builds = useAppStore(state => state.builds)
   const approvals = useAppStore(state => state.approvals)
+  const changeRecords = useAppStore(state => state.changeRecords)
   const favoritePipelines = useAppStore(state => state.favoritePipelines)
   const toggleFavorite = useAppStore(state => state.toggleFavorite)
   const getBuildByPipelineAndNumber = useAppStore(state => state.getBuildByPipelineAndNumber)
+  const getLatestBuildByPipeline = useAppStore(state => state.getLatestBuildByPipeline)
+  const setNavigateApprovalId = useAppStore(state => state.setNavigateApprovalId)
 
   const projectPipelines = useMemo(() => {
     return pipelines.filter(p => p.projectId === projectId)
@@ -86,6 +89,7 @@ const ProjectDetailPage: React.FC = () => {
   }
 
   const goToApproval = (approvalId: string) => {
+    setNavigateApprovalId(approvalId)
     Taro.switchTab({
       url: '/pages/approval/index'
     })
@@ -186,11 +190,9 @@ const ProjectDetailPage: React.FC = () => {
               key={pipeline.id}
               className={styles.pipelineCard}
               onClick={() => {
-                if (pipeline.lastBuildStatus) {
-                  const build = getBuildByPipelineAndNumber(pipeline.name, pipeline.buildCountWeek)
-                  if (build) {
-                    goToBuildDetail(build.id)
-                  }
+                const latestBuild = getLatestBuildByPipeline(pipeline.id)
+                if (latestBuild) {
+                  goToBuildDetail(latestBuild.id)
                 }
               }}
             >
@@ -258,14 +260,34 @@ const ProjectDetailPage: React.FC = () => {
             <Text className={styles.sectionTitle}>📋 关联审批 ({projectApprovals.length})</Text>
           </View>
           <View className={styles.approvalList}>
-            {projectApprovals.map(approval => (
-              <View
-                key={approval.id}
-                className={styles.approvalItem}
-                onClick={() => goToApproval(approval.id)}
-              >
-                <View className={styles.approvalInfo}>
-                  <Text className={styles.approvalTitle}>{approval.title}</Text>
+            {projectApprovals.map(approval => {
+              const build = getBuildByPipelineAndNumber(approval.pipelineName, approval.buildNumber)
+              const changes = changeRecords.filter(c => c.relatedBuildId === build?.id)
+              const changeCount = changes.reduce((sum, c) => sum + c.filesChanged.length, 0)
+              const isCoreModule = approval.impactScope.includes('核心') || approval.impactScope.includes('主链路')
+              const risk = assessRisk({
+                buildStatus: build?.status,
+                changeCount,
+                impactScope: approval.impactScope,
+                isCoreModule
+              })
+              const riskLevelCap = risk.level.charAt(0).toUpperCase() + risk.level.slice(1)
+              const riskTagClass = styles['risk' + riskLevelCap]
+              return (
+                <View
+                  key={approval.id}
+                  className={styles.approvalItem}
+                  onClick={() => goToApproval(approval.id)}
+                >
+                  <View className={styles.approvalInfo}>
+                    <View className={styles.approvalTitleRow}>
+                      <Text className={styles.approvalTitle}>{approval.title}</Text>
+                      {approval.status === 'pending' && risk.level !== 'low' && (
+                        <Text className={classnames(styles.riskTag, riskTagClass)}>
+                          {getRiskLevelText(risk.level)}
+                        </Text>
+                      )}
+                    </View>
                   <Text className={styles.approvalDesc}>
                     {approval.applicant} · {formatTime(approval.applyTime)}
                   </Text>
@@ -274,7 +296,8 @@ const ProjectDetailPage: React.FC = () => {
                   {getApprovalStatusText(approval.status)}
                 </Text>
               </View>
-            ))}
+            )
+          })}
           </View>
         </View>
       )}

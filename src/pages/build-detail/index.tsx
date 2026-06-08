@@ -5,7 +5,7 @@ import classnames from 'classnames'
 import StatusBadge from '@/components/StatusBadge'
 import PhaseItem from '@/components/PhaseItem'
 import { useAppStore, TEAM_PROJECT_MAP } from '@/store/useAppStore'
-import { formatDuration, formatFullTime, copyToClipboard, generateBuildUrl } from '@/utils'
+import { formatDuration, formatFullTime, copyToClipboard, generateBuildUrl, getTroubleshootSuggestions } from '@/utils'
 import type { Build } from '@/types'
 import styles from './index.module.scss'
 
@@ -57,6 +57,34 @@ const BuildDetailPage: React.FC = () => {
   const failedPhaseIndex = useMemo(() => {
     if (!build) return -1
     return build.phases.findIndex(p => p.status === 'failed')
+  }, [build])
+
+  const cancelledPhaseIndex = useMemo(() => {
+    if (!build) return -1
+    const cancelledIdx = build.phases.findIndex(p => p.status === 'cancelled')
+    if (cancelledIdx >= 0) return cancelledIdx
+    const runningIdx = build.phases.findIndex(p => p.status === 'running')
+    if (runningIdx >= 0) return runningIdx
+    const pendingIdx = build.phases.findIndex(p => p.status === 'pending')
+    if (pendingIdx >= 0) return pendingIdx
+    return -1
+  }, [build])
+
+  const highlightPhaseIndex = useMemo(() => {
+    if (!build) return -1
+    if (build.status === 'failed') return failedPhaseIndex
+    if (build.status === 'cancelled') return cancelledPhaseIndex
+    return -1
+  }, [build, failedPhaseIndex, cancelledPhaseIndex])
+
+  const troubleshootSuggestions = useMemo(() => {
+    if (!build) return []
+    return getTroubleshootSuggestions({
+      status: build.status,
+      phases: build.phases,
+      triggerUser: build.triggerUser,
+      commitMessage: build.commitMessage
+    })
   }, [build])
 
   const relatedApprovals = useMemo(() => {
@@ -148,12 +176,16 @@ const BuildDetailPage: React.FC = () => {
   const goToChangeRecord = () => {
     if (!build) return
     Taro.navigateTo({
-      url: `/pages/change-record/index?buildId=${build.id}`
+      url: `/pages/change-record/index?buildId=${build.id}&source=build`
     })
   }
 
   const goToApproval = (approvalId: string) => {
-    Taro.navigateBack()
+    const setNavigateApprovalId = useAppStore.getState().setNavigateApprovalId
+    setNavigateApprovalId(approvalId)
+    Taro.switchTab({
+      url: '/pages/approval/index'
+    })
   }
 
   const goBack = () => {
@@ -238,12 +270,14 @@ const BuildDetailPage: React.FC = () => {
           </View>
         </View>
 
-        {isFailedOrCancelled && failedPhaseIndex >= 0 && (
-          <View className={styles.failureSummary}>
-            <Text className={styles.failureIcon}>⚠️</Text>
+        {isFailedOrCancelled && highlightPhaseIndex >= 0 && (
+          <View className={classnames(styles.failureSummary, build.status === 'cancelled' && styles.cancelled)}>
+            <Text className={styles.failureIcon}>
+              {build.status === 'cancelled' ? '⏹️' : '⚠️'}
+            </Text>
             <View className={styles.failureInfo}>
               <Text className={styles.failureTitle}>
-                失败阶段：{build.phases[failedPhaseIndex].name}
+                {build.status === 'cancelled' ? '取消位置' : '失败阶段'}：{build.phases[highlightPhaseIndex].name}
               </Text>
               <Text className={styles.failureDesc}>
                 共 {build.phases.filter(p => p.status === 'success').length}/{build.phases.length} 个阶段成功
@@ -254,50 +288,111 @@ const BuildDetailPage: React.FC = () => {
       </View>
 
       {isFailedOrCancelled && (
-        <View className={styles.section}>
-          <View className={styles.sectionHeader}>
-            <Text className={styles.title}>🔍 排障摘要</Text>
-          </View>
-          <View className={styles.troubleshootCard}>
-            <View className={styles.troubleshootItem}>
-              <Text className={styles.troubleshootLabel}>失败阶段</Text>
-              <Text className={styles.troubleshootValue}>
-                {failedPhaseIndex >= 0 ? build.phases[failedPhaseIndex].name : '-'}
-              </Text>
+        <>
+          <View className={styles.section}>
+            <View className={styles.sectionHeader}>
+              <Text className={styles.title}>🔍 排障摘要</Text>
             </View>
-            <View className={styles.troubleshootItem}>
-              <Text className={styles.troubleshootLabel}>相关提交</Text>
-              <Text
-                className={classnames(styles.troubleshootValue, styles.link)}
-                onClick={goToChangeRecord}
-              >
-                {build.commitMessage.slice(0, 30)} →
-              </Text>
-            </View>
-            {relatedApprovals.length > 0 && (
+            <View className={styles.troubleshootCard}>
               <View className={styles.troubleshootItem}>
-                <Text className={styles.troubleshootLabel}>关联审批</Text>
-                <View className={styles.relatedApprovalList}>
-                  {relatedApprovals.map(appr => (
-                    <Text
-                      key={appr.id}
-                      className={classnames(styles.troubleshootValue, styles.link)}
-                      onClick={() => goToApproval(appr.id)}
-                    >
-                      {appr.title} →
-                    </Text>
-                  ))}
-                </View>
+                <Text className={styles.troubleshootLabel}>
+                  {build.status === 'cancelled' ? '停止阶段' : '失败阶段'}
+                </Text>
+                <Text className={styles.troubleshootValue}>
+                  {highlightPhaseIndex >= 0 ? build.phases[highlightPhaseIndex].name : '-'}
+                </Text>
               </View>
-            )}
-            <View className={styles.troubleshootItem}>
-              <Text className={styles.troubleshootLabel}>影响范围</Text>
-              <Text className={styles.troubleshootValue}>
-                {build.projectName} 项目
-              </Text>
+              <View className={styles.troubleshootItem}>
+                <Text className={styles.troubleshootLabel}>相关提交</Text>
+                <Text
+                  className={classnames(styles.troubleshootValue, styles.link)}
+                  onClick={goToChangeRecord}
+                >
+                  {build.commitMessage.slice(0, 30)} →
+                </Text>
+              </View>
+              {relatedApprovals.length > 0 && (
+                <View className={styles.troubleshootItem}>
+                  <Text className={styles.troubleshootLabel}>关联审批</Text>
+                  <View className={styles.relatedApprovalList}>
+                    {relatedApprovals.map(appr => (
+                      <Text
+                        key={appr.id}
+                        className={classnames(styles.troubleshootValue, styles.link)}
+                        onClick={() => goToApproval(appr.id)}
+                      >
+                        {appr.title} →
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+              )}
+              <View className={styles.troubleshootItem}>
+                <Text className={styles.troubleshootLabel}>影响范围</Text>
+                <Text className={styles.troubleshootValue}>
+                  {build.projectName} 项目
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+
+          {troubleshootSuggestions.length > 0 && (
+            <View className={styles.section}>
+              <View className={styles.sectionHeader}>
+                <Text className={styles.title}>💡 处理建议</Text>
+              </View>
+              {troubleshootSuggestions.map((suggestion, idx) => (
+                <View key={idx} className={styles.suggestionCard}>
+                  <View className={styles.suggestionHeader}>
+                    <Text className={styles.suggestionPhase}>📍 {suggestion.phase}</Text>
+                  </View>
+                  <View className={styles.suggestionItem}>
+                    <Text className={styles.suggestionLabel}>可能原因</Text>
+                    <Text className={styles.suggestionValue}>{suggestion.reason}</Text>
+                  </View>
+                  <View className={styles.suggestionItem}>
+                    <Text className={styles.suggestionLabel}>推荐负责人</Text>
+                    <Text className={styles.suggestionValue}>👤 {suggestion.suggestedOwner}</Text>
+                  </View>
+                  {suggestion.relatedChanges.length > 0 && (
+                    <View className={styles.suggestionItem}>
+                      <Text className={styles.suggestionLabel}>相关变更</Text>
+                      <View className={styles.suggestionChanges}>
+                        {suggestion.relatedChanges.map((change, ci) => (
+                          <Text key={ci} className={styles.suggestionChangeTag}>
+                            {change}
+                          </Text>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                  <View className={styles.suggestionActions}>
+                    {suggestion.actions.map((action, ai) => (
+                      <View
+                        key={ai}
+                        className={classnames(
+                          styles.suggestionAction,
+                          action.type === 'primary' && styles.actionPrimary
+                        )}
+                        onClick={() => {
+                          if (action.label === '重试构建') handleRetry()
+                          if (action.label === '查看完整日志' || action.label === '查看错误日志') {
+                            const phaseEl = document.getElementById(`phase-${build.phases[highlightPhaseIndex]?.id}`)
+                            if (phaseEl) {
+                              phaseEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }
+                          }
+                        }}
+                      >
+                        <Text>{action.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </>
       )}
 
       <View className={styles.section}>
@@ -307,12 +402,13 @@ const BuildDetailPage: React.FC = () => {
         </View>
         <View className={styles.phaseList}>
           {build.phases.map((phase, idx) => (
-            <PhaseItem
-              key={phase.id}
-              phase={phase}
-              defaultExpanded={phase.status === 'failed'}
-              highlight={phase.status === 'failed'}
-            />
+            <View key={phase.id} id={`phase-${phase.id}`}>
+              <PhaseItem
+                phase={phase}
+                defaultExpanded={phase.status === 'failed' || (build.status === 'cancelled' && idx === highlightPhaseIndex)}
+                highlight={phase.status === 'failed' || (build.status === 'cancelled' && idx === highlightPhaseIndex)}
+              />
+            </View>
           ))}
         </View>
       </View>

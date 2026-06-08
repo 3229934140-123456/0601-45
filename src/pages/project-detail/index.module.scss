@@ -310,15 +310,39 @@
       flex: 1;
       min-width: 0;
 
+      .approvalTitleRow {
+        display: flex;
+        align-items: center;
+        gap: $spacing-xs;
+        margin-bottom: 4rpx;
+      }
+
       .approvalTitle {
         font-size: $font-size-sm;
         font-weight: $font-weight-medium;
         color: $color-text-primary;
-        margin-bottom: 4rpx;
-        display: block;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        flex: 1;
+      }
+
+      .riskTag {
+        font-size: 20rpx;
+        padding: 2rpx 10rpx;
+        border-radius: $radius-xs;
+        font-weight: $font-weight-medium;
+        flex-shrink: 0;
+
+        &.riskHigh {
+          background: $color-error-bg;
+          color: $color-error;
+        }
+
+        &.riskMedium {
+          background: $color-warning-bg;
+          color: $color-warning;
+        }
       }
 
       .approvalDesc {

@@ -1,9 +1,9 @@
 import { create } from 'zustand'
-import type { Pipeline, Notification, UserProfile, Build, Approval } from '@/types'
+import type { Pipeline, Notification, UserProfile, Build, Approval, ChangeRecord } from '@/types'
 import { pipelines as mockPipelines } from '@/data/pipelines'
 import { builds as mockBuilds, generatePhases } from '@/data/builds'
 import { approvals as mockApprovals } from '@/data/approvals'
-import { notifications as mockNotifications } from '@/data/notifications'
+import { notifications as mockNotifications, changeRecords as mockChangeRecords } from '@/data/notifications'
 import { userProfile as mockProfile } from '@/data/notifications'
 import dayjs from 'dayjs'
 
@@ -28,8 +28,10 @@ interface AppState {
   pipelines: Pipeline[]
   builds: Build[]
   approvals: Approval[]
+  changeRecords: ChangeRecord[]
   buildRemarks: Record<string, string>
   buildCounter: Record<string, number>
+  navigateApprovalId: string | null
 
   setCurrentTeam: (teamId: string) => void
   toggleFavorite: (pipelineId: string) => void
@@ -61,6 +63,9 @@ interface AppState {
     projectCount: number
     pipelineCount: number
   }
+
+  setNavigateApprovalId: (id: string | null) => void
+  consumeNavigateApprovalId: () => string | null
 }
 
 let buildIdCounter = 100
@@ -80,12 +85,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       acc[b.id] = b.remark!
       return acc
     }, {} as Record<string, string>),
+  changeRecords: mockChangeRecords,
   buildCounter: mockBuilds.reduce((acc, b) => {
     if (!acc[b.pipelineId] || b.buildNumber > acc[b.pipelineId]) {
       acc[b.pipelineId] = b.buildNumber
     }
     return acc
   }, {} as Record<string, number>),
+  navigateApprovalId: null,
 
   setCurrentTeam: (teamId: string) => {
     console.log('[Store] setCurrentTeam:', teamId)
@@ -371,5 +378,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       projectCount: projectIds.size,
       pipelineCount: teamPipelines.length
     }
+  },
+
+  setNavigateApprovalId: (id: string | null) => {
+    set({ navigateApprovalId: id })
+  },
+
+  consumeNavigateApprovalId: () => {
+    const { navigateApprovalId } = get()
+    if (navigateApprovalId) {
+      set({ navigateApprovalId: null })
+      return navigateApprovalId
+    }
+    return null
   }
 }))
