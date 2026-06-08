@@ -15,8 +15,10 @@ interface PipelineCardProps {
 
 const PipelineCard: React.FC<PipelineCardProps> = ({ pipeline, onFavoriteChange }) => {
   const toggleFavorite = useAppStore(state => state.toggleFavorite)
-  const isFavorite = useAppStore(state => state.isFavorite(pipeline.id))
+  const favoritePipelines = useAppStore(state => state.favoritePipelines)
   const getLatestBuildByPipeline = useAppStore(state => state.getLatestBuildByPipeline)
+
+  const isFav = favoritePipelines.includes(pipeline.id)
 
   const handleCardClick = () => {
     const latestBuild = getLatestBuildByPipeline(pipeline.id)
@@ -32,7 +34,7 @@ const PipelineCard: React.FC<PipelineCardProps> = ({ pipeline, onFavoriteChange 
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation()
     toggleFavorite(pipeline.id)
-    onFavoriteChange?.(pipeline.id, !isFavorite)
+    onFavoriteChange?.(pipeline.id, !isFav)
   }
 
   return (
@@ -43,10 +45,10 @@ const PipelineCard: React.FC<PipelineCardProps> = ({ pipeline, onFavoriteChange 
           <Text className={styles.name}>{pipeline.name}</Text>
         </View>
         <View
-          className={classnames(styles.favorite, isFavorite ? styles.active : styles.inactive)}
+          className={classnames(styles.favorite, isFav ? styles.active : styles.inactive)}
           onClick={handleFavorite}
         >
-          {isFavorite ? '★' : '☆'}
+          {isFav ? '★' : '☆'}
         </View>
       </View>
 

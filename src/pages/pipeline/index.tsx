@@ -4,7 +4,7 @@ import Taro, { usePullDownRefresh } from '@tarojs/taro'
 import classnames from 'classnames'
 import PipelineCard from '@/components/PipelineCard'
 import { teams } from '@/data/projects'
-import { useAppStore } from '@/store/useAppStore'
+import { useAppStore, TEAM_PROJECT_MAP } from '@/store/useAppStore'
 import type { BuildStatus } from '@/types'
 import styles from './index.module.scss'
 
@@ -13,9 +13,9 @@ type TabType = 'all' | 'favorite'
 const PipelinePage: React.FC = () => {
   const currentTeam = useAppStore(state => state.currentTeam)
   const setCurrentTeam = useAppStore(state => state.setCurrentTeam)
-  const getPipelinesByTeam = useAppStore(state => state.getPipelinesByTeam)
-  const isFavorite = useAppStore(state => state.isFavorite)
+  const pipelines = useAppStore(state => state.pipelines)
   const favoritePipelines = useAppStore(state => state.favoritePipelines)
+  const isFavorite = useAppStore(state => state.isFavorite)
 
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [searchText, setSearchText] = useState('')
@@ -32,10 +32,15 @@ const PipelinePage: React.FC = () => {
   })
 
   const filteredPipelines = useMemo(() => {
-    let list = getPipelinesByTeam(currentTeam)
+    let list = pipelines
+
+    if (currentTeam !== 'all') {
+      const projectIds = TEAM_PROJECT_MAP[currentTeam] || []
+      list = list.filter(p => projectIds.includes(p.projectId))
+    }
 
     if (activeTab === 'favorite') {
-      list = list.filter(p => isFavorite(p.id))
+      list = list.filter(p => favoritePipelines.includes(p.id))
     }
 
     if (searchText) {
@@ -51,7 +56,7 @@ const PipelinePage: React.FC = () => {
     }
 
     return list
-  }, [currentTeam, activeTab, searchText, statusFilter, getPipelinesByTeam, isFavorite, favoritePipelines])
+  }, [currentTeam, activeTab, searchText, statusFilter, pipelines, favoritePipelines])
 
   const handleTeamChange = (teamId: string) => {
     setCurrentTeam(teamId)

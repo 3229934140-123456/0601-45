@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
 import classnames from 'classnames'
-import { useAppStore } from '@/store/useAppStore'
+import { useAppStore, TEAM_PROJECT_MAP } from '@/store/useAppStore'
 import { getApprovalStatusText, formatTime } from '@/utils'
 import type { ApprovalStatus, Approval } from '@/types'
 import styles from './index.module.scss'
@@ -11,8 +11,10 @@ type TabType = 'pending' | 'all'
 
 const ApprovalPage: React.FC = () => {
   const currentTeam = useAppStore(state => state.currentTeam)
-  const getApprovalsByTeam = useAppStore(state => state.getApprovalsByTeam)
-  const getBuildsByPipeline = useAppStore(state => state.getBuildsByPipeline)
+  const approvals = useAppStore(state => state.approvals)
+  const pipelines = useAppStore(state => state.pipelines)
+  const getBuildByPipelineAndNumber = useAppStore(state => state.getBuildByPipelineAndNumber)
+  const updateApprovalStatus = useAppStore(state => state.updateApprovalStatus)
 
   const [activeTab, setActiveTab] = useState<TabType>('pending')
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -20,16 +22,31 @@ const ApprovalPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false)
 
   const filteredList = useMemo(() => {
-    const list = getApprovalsByTeam(currentTeam)
+    let list = approvals
+    if (currentTeam !== 'all') {
+      const projectIds = TEAM_PROJECT_MAP[currentTeam] || []
+      const teamPipelineNames = pipelines
+        .filter(p => projectIds.includes(p.projectId))
+        .map(p => p.name)
+      list = list.filter(a => teamPipelineNames.includes(a.pipelineName))
+    }
     if (activeTab === 'pending') {
       return list.filter(a => a.status === 'pending')
     }
     return list
-  }, [currentTeam, activeTab, getApprovalsByTeam])
+  }, [currentTeam, activeTab, approvals, pipelines])
 
   const pendingCount = useMemo(() => {
-    return getApprovalsByTeam(currentTeam).filter(a => a.status === 'pending').length
-  }, [currentTeam, getApprovalsByTeam])
+    let list = approvals
+    if (currentTeam !== 'all') {
+      const projectIds = TEAM_PROJECT_MAP[currentTeam] || []
+      const teamPipelineNames = pipelines
+        .filter(p => projectIds.includes(p.projectId))
+        .map(p => p.name)
+      list = list.filter(a => teamPipelineNames.includes(a.pipelineName))
+    }
+    return list.filter(a => a.status === 'pending').length
+  }, [currentTeam, approvals, pipelines])
 
   usePullDownRefresh(() => {
     console.log('[Approval] pull down refresh')
@@ -49,7 +66,10 @@ const ApprovalPage: React.FC = () => {
       confirmColor: '#00b42a',
       success: res => {
         if (res.confirm) {
-          Taro.showToast({ title: '已通过', icon: 'success' })
+          const success = updateApprovalStatus(id, 'approved')
+          if (success) {
+            Taro.showToast({ title: '已通过', icon: 'success' })
+          }
         }
       }
     })
@@ -64,7 +84,10 @@ const ApprovalPage: React.FC = () => {
       confirmColor: '#f53f3f',
       success: res => {
         if (res.confirm) {
-          Taro.showToast({ title: '已拒绝', icon: 'none' })
+          const success = updateApprovalStatus(id, 'rejected')
+          if (success) {
+            Taro.showToast({ title: '已拒绝', icon: 'none' })
+          }
         }
       }
     })
@@ -76,19 +99,16 @@ const ApprovalPage: React.FC = () => {
 
   const goToBuildDetail = (approval: Approval, e: React.MouseEvent) => {
     e.stopPropagation()
-    const builds = getBuildsByPipeline('pipe-3') // 默认用 pipe-3，实际应根据 pipeline 名查找
-    if (builds.length > 0) {
-      const targetBuild = builds.find(b => b.buildNumber === approval.buildNumber)
-      if (targetBuild) {
-        Taro.navigateTo({
-          url: `/pages/build-detail/index?buildId=${targetBuild.id}`
-        })
-        return
-      }
+    const build = getBuildByPipelineAndNumber(approval.pipelineName, approval.buildNumber)
+    if (build) {
+      Taro.navigateTo({
+        url: `/pages/build-detail/index?buildId=${build.id}`
+      })
+    } else {
+      Taro.navigateTo({
+        url: `/pages/build-detail/index?buildId=not-found-${approval.id}`
+      })
     }
-    Taro.navigateTo({
-      url: `/pages/build-detail/index?buildId=build-3`
-    })
   }
 
   const getTypeLabel = (type: string) => {

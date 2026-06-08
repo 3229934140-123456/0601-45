@@ -7,11 +7,11 @@ import { notifications as mockNotifications } from '@/data/notifications'
 import { userProfile as mockProfile } from '@/data/notifications'
 import dayjs from 'dayjs'
 
-interface TeamProjectMap {
+export interface TeamProjectMap {
   [key: string]: string[]
 }
 
-const TEAM_PROJECT_MAP: TeamProjectMap = {
+export const TEAM_PROJECT_MAP: TeamProjectMap = {
   'team-1': ['proj-1', 'proj-7'],
   'team-2': ['proj-2', 'proj-3', 'proj-8'],
   'team-3': ['proj-4'],
@@ -41,12 +41,15 @@ interface AppState {
   getBuildsByPipeline: (pipelineId: string) => Build[]
   getLatestBuildByPipeline: (pipelineId: string) => Build | undefined
   getBuildById: (buildId: string) => Build | undefined
+  getBuildByPipelineAndNumber: (pipelineName: string, buildNumber: number) => Build | undefined
   getApprovalsByTeam: (teamId: string) => Approval[]
+  updateApprovalStatus: (approvalId: string, status: Approval['status']) => boolean
 
   retryBuild: (buildId: string) => Build | null
   cancelPendingBuild: (buildId: string) => boolean
   pauseRunningBuild: (buildId: string) => boolean
   setBuildRemark: (buildId: string, remark: string) => void
+  getBuildRemark: (buildId: string) => string
 
   markNotificationRead: (id: string) => void
   markAllRead: () => void
@@ -146,6 +149,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     return build
   },
 
+  getBuildByPipelineAndNumber: (pipelineName: string, buildNumber: number) => {
+    const { builds, buildRemarks } = get()
+    const build = builds.find(b =>
+      b.pipelineName === pipelineName && b.buildNumber === buildNumber
+    )
+    if (!build) return undefined
+    if (buildRemarks[build.id]) {
+      return { ...build, remark: buildRemarks[build.id] }
+    }
+    return build
+  },
+
   getApprovalsByTeam: (teamId: string) => {
     const { approvals, pipelines } = get()
     if (teamId === 'all') return approvals
@@ -158,6 +173,21 @@ export const useAppStore = create<AppState>((set, get) => ({
     return approvals.filter(a => {
       return teamPipelineNames.includes(a.pipelineName)
     })
+  },
+
+  updateApprovalStatus: (approvalId: string, status: Approval['status']) => {
+    const { approvals } = get()
+    const approval = approvals.find(a => a.id === approvalId)
+    if (!approval || approval.status === status) return false
+
+    console.log('[Store] updateApprovalStatus:', approvalId, '->', status)
+
+    const updatedApprovals = approvals.map(a =>
+      a.id === approvalId ? { ...a, status } : a
+    )
+
+    set({ approvals: updatedApprovals })
+    return true
   },
 
   retryBuild: (buildId: string) => {
@@ -241,6 +271,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         [buildId]: remark
       }
     })
+  },
+
+  getBuildRemark: (buildId: string) => {
+    return get().buildRemarks[buildId] || ''
   },
 
   markNotificationRead: (id: string) => {

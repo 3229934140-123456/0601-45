@@ -5,7 +5,7 @@ import classnames from 'classnames'
 import StatCard from '@/components/StatCard'
 import BuildCard from '@/components/BuildCard'
 import { teams } from '@/data/projects'
-import { useAppStore } from '@/store/useAppStore'
+import { useAppStore, TEAM_PROJECT_MAP } from '@/store/useAppStore'
 import { userProfile } from '@/data/notifications'
 import styles from './index.module.scss'
 
@@ -13,10 +13,9 @@ const HomePage: React.FC = () => {
   const currentTeam = useAppStore(state => state.currentTeam)
   const setCurrentTeam = useAppStore(state => state.setCurrentTeam)
   const unreadCount = useAppStore(state => state.unreadCount)
-  const getBuildsByTeam = useAppStore(state => state.getBuildsByTeam)
-  const getFavoritePipelines = useAppStore(state => state.getFavoritePipelines)
-  const getTeamStats = useAppStore(state => state.getTeamStats)
-  const getApprovalsByTeam = useAppStore(state => state.getApprovalsByTeam)
+  const builds = useAppStore(state => state.builds)
+  const pipelines = useAppStore(state => state.pipelines)
+  const approvals = useAppStore(state => state.approvals)
   const favoritePipelines = useAppStore(state => state.favoritePipelines)
 
   const [loading, setLoading] = useState(false)
@@ -41,32 +40,56 @@ const HomePage: React.FC = () => {
   })
 
   const teamStats = useMemo(() => {
-    return getTeamStats(currentTeam)
-  }, [currentTeam, getTeamStats])
+    const projectIds = currentTeam === 'all'
+      ? new Set(pipelines.map(p => p.projectId))
+      : new Set(pipelines.filter(p => TEAM_PROJECT_MAP[currentTeam]?.includes(p.projectId)).map(p => p.projectId))
+
+    const teamBuilds = currentTeam === 'all'
+      ? builds
+      : builds.filter(b => TEAM_PROJECT_MAP[currentTeam]?.includes(b.projectId))
+
+    const teamPipelines = currentTeam === 'all'
+      ? pipelines
+      : pipelines.filter(p => TEAM_PROJECT_MAP[currentTeam]?.includes(p.projectId))
+
+    const weekBuilds = teamBuilds.length
+    const successCount = teamBuilds.filter(b => b.status === 'success').length
+    const successRate = weekBuilds > 0
+      ? Math.round((successCount / weekBuilds) * 1000) / 10
+      : 100
+
+    return {
+      weekBuilds,
+      successRate,
+      projectCount: projectIds.size,
+      pipelineCount: teamPipelines.length
+    }
+  }, [currentTeam, builds, pipelines])
 
   const recentBuilds = useMemo(() => {
-    return getBuildsByTeam(currentTeam)
-  }, [currentTeam, getBuildsByTeam])
+    if (currentTeam === 'all') return builds
+    return builds.filter(b => TEAM_PROJECT_MAP[currentTeam]?.includes(b.projectId))
+  }, [currentTeam, builds])
 
   const favoriteCount = useMemo(() => {
-    const favPipes = getFavoritePipelines()
-    if (currentTeam === 'all') return favPipes.length
-    return favPipes.filter(p => {
-      const teamProjectMap: Record<string, string[]> = {
-        'team-1': ['proj-1', 'proj-7'],
-        'team-2': ['proj-2', 'proj-3', 'proj-8'],
-        'team-3': ['proj-4'],
-        'team-4': ['proj-5'],
-        'team-5': ['proj-6']
-      }
-      const projectIds = teamProjectMap[currentTeam] || []
-      return projectIds.includes(p.projectId)
-    }).length
-  }, [currentTeam, favoritePipelines, getFavoritePipelines])
+    if (currentTeam === 'all') return favoritePipelines.length
+    return pipelines.filter(p =>
+      favoritePipelines.includes(p.id) && TEAM_PROJECT_MAP[currentTeam]?.includes(p.projectId)
+    ).length
+  }, [currentTeam, favoritePipelines, pipelines])
 
   const pendingCount = useMemo(() => {
-    return getApprovalsByTeam(currentTeam).filter(a => a.status === 'pending').length
-  }, [currentTeam, getApprovalsByTeam])
+    if (currentTeam === 'all') {
+      return approvals.filter(a => a.status === 'pending').length
+    }
+    const projectIds = TEAM_PROJECT_MAP[currentTeam] || []
+    const teamPipelineNames = pipelines
+      .filter(p => projectIds.includes(p.projectId))
+      .map(p => p.name)
+    return approvals.filter(a =>
+      a.status === 'pending' && teamPipelineNames.includes(a.pipelineName)
+    ).length
+  }, [currentTeam, approvals, pipelines])
 
   const handleTeamChange = (teamId: string) => {
     setCurrentTeam(teamId)

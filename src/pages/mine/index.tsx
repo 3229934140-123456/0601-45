@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
-import { useAppStore } from '@/store/useAppStore'
+import { useAppStore, TEAM_PROJECT_MAP } from '@/store/useAppStore'
 import { userProfile } from '@/data/notifications'
 import type { UserProfile } from '@/types'
 import styles from './index.module.scss'
@@ -10,21 +10,20 @@ import styles from './index.module.scss'
 const MinePage: React.FC = () => {
   const notificationSettings = useAppStore(state => state.userProfile.notificationSettings)
   const toggleNotificationSetting = useAppStore(state => state.toggleNotificationSetting)
-  const getFavoritePipelines = useAppStore(state => state.getFavoritePipelines)
-  const getApprovalsByTeam = useAppStore(state => state.getApprovalsByTeam)
-  const favoritePipelinesStore = useAppStore(state => state.favoritePipelines)
+  const favoritePipelines = useAppStore(state => state.favoritePipelines)
+  const pipelines = useAppStore(state => state.pipelines)
+  const approvals = useAppStore(state => state.approvals)
 
   const [statusBarHeight, setStatusBarHeight] = useState(20)
   const [profile] = useState<UserProfile>(userProfile)
 
-  const favoritePipelines = useMemo(() => getFavoritePipelines(), [
-    getFavoritePipelines,
-    favoritePipelinesStore
-  ])
+  const favoritePipelinesList = useMemo(() => {
+    return pipelines.filter(p => favoritePipelines.includes(p.id))
+  }, [pipelines, favoritePipelines])
 
   const pendingApprovals = useMemo(
-    () => getApprovalsByTeam('all').filter(a => a.status === 'pending'),
-    [getApprovalsByTeam]
+    () => approvals.filter(a => a.status === 'pending'),
+    [approvals]
   )
 
   useEffect(() => {
@@ -55,7 +54,7 @@ const MinePage: React.FC = () => {
   ] as const
 
   const stats = [
-    { value: favoritePipelines.length, label: '收藏' },
+    { value: favoritePipelinesList.length, label: '收藏' },
     { value: pendingApprovals.length, label: '待审批' },
     { value: profile.notificationSettings.buildFailed ? '开' : '关', label: '失败提醒' }
   ]
@@ -96,8 +95,8 @@ const MinePage: React.FC = () => {
         <Text className={styles.sectionTitle}>我的收藏</Text>
         <View className={styles.favoriteSection}>
           <View className={styles.favoriteList}>
-            {favoritePipelines.length > 0 ? (
-              favoritePipelines.slice(0, 6).map(pipe => (
+            {favoritePipelinesList.length > 0 ? (
+              favoritePipelinesList.slice(0, 6).map(pipe => (
                 <Text
                   key={pipe.id}
                   className={styles.favoriteTag}
@@ -107,7 +106,7 @@ const MinePage: React.FC = () => {
                 </Text>
               ))
             ) : (
-              <Text className={styles.favoriteTag}>暂无收藏</Text>
+              <Text className={styles.favoriteEmpty}>暂无收藏，去流水线页添加吧 →</Text>
             )}
           </View>
         </View>
