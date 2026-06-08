@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, Button, Textarea } from '@tarojs/components'
-import Taro, { useRouter } from '@tarojs/taro'
+import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import classnames from 'classnames'
 import StatusBadge from '@/components/StatusBadge'
 import PhaseItem from '@/components/PhaseItem'
-import { getBuildById, recentBuilds } from '@/data/builds'
+import { useAppStore } from '@/store/useAppStore'
 import { formatDuration, formatFullTime, copyToClipboard, generateBuildUrl } from '@/utils'
 import type { Build } from '@/types'
 import styles from './index.module.scss'
@@ -13,57 +13,87 @@ const BuildDetailPage: React.FC = () => {
   const router = useRouter()
   const buildId = router.params.buildId || 'build-1'
 
-  const [build, setBuild] = useState<Build | undefined>()
+  const getBuildById = useAppStore(state => state.getBuildById)
+  const retryBuild = useAppStore(state => state.retryBuild)
+  const cancelPendingBuild = useAppStore(state => state.cancelPendingBuild)
+  const getBuildRemark = useAppStore(state => state.getBuildRemark)
+  const setBuildRemark = useAppStore(state => state.setBuildRemark)
+
+  const [build, setBuild] = useState<Build | null>(null)
   const [remark, setRemark] = useState('')
   const [isEditingRemark, setIsEditingRemark] = useState(false)
   const [showActionSheet, setShowActionSheet] = useState(false)
+  const [notFound, setNotFound] = useState(false)
+
+  const loadBuild = useCallback(() => {
+    const found = getBuildById(buildId)
+    if (found) {
+      setBuild(found)
+      setNotFound(false)
+      const savedRemark = getBuildRemark(buildId)
+      if (savedRemark) {
+        setRemark(savedRemark)
+      } else {
+        setRemark('')
+      }
+    } else {
+      setBuild(null)
+      setNotFound(true)
+    }
+  }, [buildId, getBuildById, getBuildRemark])
 
   useEffect(() => {
-    console.log('[BuildDetail] buildId:', buildId)
-    const found = getBuildById(buildId) || recentBuilds[0]
-    setBuild(found)
-    if (found?.remark) {
-      setRemark(found.remark)
-    }
-  }, [buildId])
+    loadBuild()
+  }, [loadBuild])
 
-  if (!build) {
-    return (
-      <View className={styles.page}>
-        <Text>加载中...</Text>
-      </View>
-    )
-  }
+  useDidShow(() => {
+    loadBuild()
+  })
 
   const handleRetry = () => {
+    if (!build) return
     console.log('[BuildDetail] retry build:', build.id)
     Taro.showModal({
       title: '确认重试',
       content: '确定要重新执行这次构建吗？',
       success: res => {
         if (res.confirm) {
-          Taro.showToast({ title: '已触发重试', icon: 'success' })
+          const newBuild = retryBuild(build.id)
+          if (newBuild) {
+            Taro.showToast({ title: '已触发重试', icon: 'success' })
+            setTimeout(() => {
+              Taro.redirectTo({
+                url: `/pages/build-detail/index?buildId=${newBuild.id}`
+              })
+            }, 800)
+          } else {
+            Taro.showToast({ title: '重试失败', icon: 'none' })
+          }
         }
       }
     })
   }
 
-  const handlePause = () => {
-    console.log('[BuildDetail] pause build:', build.id)
+  const handleCancel = () => {
+    if (!build) return
+    console.log('[BuildDetail] cancel pending build:', build.id)
     Taro.showModal({
-      title: '确认暂停',
-      content: build.status === 'pending' 
-        ? '确定要取消这次排队中的构建吗？' 
-        : '确定要暂停这次构建吗？',
+      title: '确认取消',
+      content: '确定要取消这次排队中的构建吗？',
       success: res => {
         if (res.confirm) {
-          Taro.showToast({ title: '操作成功', icon: 'success' })
+          const success = cancelPendingBuild(build.id)
+          if (success) {
+            Taro.showToast({ title: '已取消排队', icon: 'success' })
+            loadBuild()
+          }
         }
       }
     })
   }
 
   const handleShare = () => {
+    if (!build) return
     console.log('[BuildDetail] share build:', build.id)
     const url = generateBuildUrl(build.id)
     copyToClipboard(url).then(success => {
@@ -79,19 +109,60 @@ const BuildDetailPage: React.FC = () => {
   }
 
   const handleSaveRemark = () => {
+    if (!build) return
     console.log('[BuildDetail] save remark:', remark)
+    setBuildRemark(build.id, remark)
     setIsEditingRemark(false)
     Taro.showToast({ title: '备注已保存', icon: 'success' })
   }
 
   const goToChangeRecord = () => {
+    if (!build) return
     Taro.navigateTo({
       url: `/pages/change-record/index?buildId=${build.id}`
     })
   }
 
-  const showPauseButton = build.status === 'running' || build.status === 'pending'
-  const showRetryButton = build.status === 'failed' || build.status === 'cancelled'
+  const goBack = () => {
+    Taro.navigateBack()
+  }
+
+  const goToAllBuilds = () => {
+    Taro.switchTab({
+      url: '/pages/pipeline/index'
+    })
+  }
+
+  if (notFound) {
+    return (
+      <View className={styles.page}>
+        <View className={styles.notFoundPage}>
+          <Text className={styles.notFoundIcon}>📭</Text>
+          <Text className={styles.notFoundTitle}>构建记录不存在</Text>
+          <Text className={styles.notFoundDesc}>这条构建记录可能已被删除或链接无效</Text>
+          <View className={styles.notFoundActions}>
+            <Button className={classnames(styles.btn, styles.secondary)} onClick={goBack}>
+              返回
+            </Button>
+            <Button className={classnames(styles.btn, styles.primary)} onClick={goToAllBuilds}>
+              查看全部构建
+            </Button>
+          </View>
+        </View>
+      </View>
+    )
+  }
+
+  if (!build) {
+    return (
+      <View className={styles.page}>
+        <Text>加载中...</Text>
+      </View>
+    )
+  }
+
+  const showCancelButton = build.status === 'pending'
+  const showRetryButton = build.status === 'failed' || build.status === 'cancelled' || build.status === 'success'
 
   return (
     <ScrollView scrollY className={styles.page}>
@@ -154,7 +225,7 @@ const BuildDetailPage: React.FC = () => {
           <Text className={styles.title}>备注</Text>
           {!isEditingRemark && (
             <Text className={styles.action} onClick={() => setIsEditingRemark(true)}>
-              添加
+              {remark ? '编辑' : '添加'}
             </Text>
           )}
         </View>
@@ -204,12 +275,12 @@ const BuildDetailPage: React.FC = () => {
         >
           ...
         </Button>
-        {showPauseButton && (
+        {showCancelButton && (
           <Button
             className={classnames(styles.btn, styles.danger)}
-            onClick={handlePause}
+            onClick={handleCancel}
           >
-            {build.status === 'pending' ? '取消排队' : '暂停构建'}
+            取消排队
           </Button>
         )}
         {showRetryButton && (
@@ -220,7 +291,7 @@ const BuildDetailPage: React.FC = () => {
             ⟳ 重试
           </Button>
         )}
-        {!showPauseButton && !showRetryButton && (
+        {!showCancelButton && !showRetryButton && (
           <Button
             className={classnames(styles.btn, styles.primary)}
             onClick={handleShare}
@@ -228,7 +299,7 @@ const BuildDetailPage: React.FC = () => {
             转发链接
           </Button>
         )}
-        {(showPauseButton || showRetryButton) && (
+        {(showCancelButton || showRetryButton) && (
           <Button
             className={classnames(styles.btn, styles.secondary)}
             onClick={handleShare}

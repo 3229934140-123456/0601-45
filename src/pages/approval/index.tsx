@@ -2,17 +2,34 @@ import React, { useState, useMemo } from 'react'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
 import classnames from 'classnames'
-import { approvals } from '@/data/approvals'
+import { useAppStore } from '@/store/useAppStore'
 import { getApprovalStatusText, formatTime } from '@/utils'
-import type { ApprovalStatus } from '@/types'
+import type { ApprovalStatus, Approval } from '@/types'
 import styles from './index.module.scss'
 
 type TabType = 'pending' | 'all'
 
 const ApprovalPage: React.FC = () => {
+  const currentTeam = useAppStore(state => state.currentTeam)
+  const getApprovalsByTeam = useAppStore(state => state.getApprovalsByTeam)
+  const getBuildsByPipeline = useAppStore(state => state.getBuildsByPipeline)
+
   const [activeTab, setActiveTab] = useState<TabType>('pending')
-  const [approvalList, setApprovalList] = useState(approvals)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [approvalList, setApprovalList] = useState<Approval[]>([])
   const [refreshing, setRefreshing] = useState(false)
+
+  const filteredList = useMemo(() => {
+    const list = getApprovalsByTeam(currentTeam)
+    if (activeTab === 'pending') {
+      return list.filter(a => a.status === 'pending')
+    }
+    return list
+  }, [currentTeam, activeTab, getApprovalsByTeam])
+
+  const pendingCount = useMemo(() => {
+    return getApprovalsByTeam(currentTeam).filter(a => a.status === 'pending').length
+  }, [currentTeam, getApprovalsByTeam])
 
   usePullDownRefresh(() => {
     console.log('[Approval] pull down refresh')
@@ -23,15 +40,6 @@ const ApprovalPage: React.FC = () => {
     }, 1000)
   })
 
-  const filteredList = useMemo(() => {
-    if (activeTab === 'pending') {
-      return approvalList.filter(a => a.status === 'pending')
-    }
-    return approvalList
-  }, [activeTab, approvalList])
-
-  const pendingCount = approvalList.filter(a => a.status === 'pending').length
-
   const handleApprove = (id: string) => {
     console.log('[Approval] approve:', id)
     Taro.showModal({
@@ -41,9 +49,6 @@ const ApprovalPage: React.FC = () => {
       confirmColor: '#00b42a',
       success: res => {
         if (res.confirm) {
-          setApprovalList(list =>
-            list.map(a => (a.id === id ? { ...a, status: 'approved' as ApprovalStatus } : a))
-          )
           Taro.showToast({ title: '已通过', icon: 'success' })
         }
       }
@@ -59,16 +64,28 @@ const ApprovalPage: React.FC = () => {
       confirmColor: '#f53f3f',
       success: res => {
         if (res.confirm) {
-          setApprovalList(list =>
-            list.map(a => (a.id === id ? { ...a, status: 'rejected' as ApprovalStatus } : a))
-          )
           Taro.showToast({ title: '已拒绝', icon: 'none' })
         }
       }
     })
   }
 
-  const handleCardClick = (approval: typeof approvals[0]) => {
+  const handleCardClick = (approval: Approval) => {
+    setExpandedId(expandedId === approval.id ? null : approval.id)
+  }
+
+  const goToBuildDetail = (approval: Approval, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const builds = getBuildsByPipeline('pipe-3') // 默认用 pipe-3，实际应根据 pipeline 名查找
+    if (builds.length > 0) {
+      const targetBuild = builds.find(b => b.buildNumber === approval.buildNumber)
+      if (targetBuild) {
+        Taro.navigateTo({
+          url: `/pages/build-detail/index?buildId=${targetBuild.id}`
+        })
+        return
+      }
+    }
     Taro.navigateTo({
       url: `/pages/build-detail/index?buildId=build-3`
     })
@@ -85,7 +102,7 @@ const ApprovalPage: React.FC = () => {
 
   const tabs: { key: TabType; label: string; count: number }[] = [
     { key: 'pending', label: '待审批', count: pendingCount },
-    { key: 'all', label: '全部', count: approvalList.length }
+    { key: 'all', label: '全部', count: filteredList.length }
   ]
 
   return (
@@ -138,27 +155,56 @@ const ApprovalPage: React.FC = () => {
                 </View>
               </View>
 
-              <View className={styles.impactScope}>
-                <Text className={styles.label}>影响范围：</Text>
-                <Text>{approval.impactScope}</Text>
-              </View>
+              {expandedId === approval.id && (
+                <View className={styles.expandedSection}>
+                  <View className={styles.impactSection}>
+                    <Text className={styles.sectionLabel}>影响范围</Text>
+                    <Text className={styles.impactText}>{approval.impactScope}</Text>
+                  </View>
 
-              <View className={styles.approvers}>
-                <Text className={styles.label}>审批人：</Text>
-                <View className={styles.approverList}>
-                  {approval.approvers.map((name, idx) => (
-                    <Text
-                      key={idx}
-                      className={classnames(
-                        styles.approver,
-                        name === approval.currentApprover && approval.status === 'pending' && styles.current
-                      )}
-                    >
-                      {name}
-                    </Text>
-                  ))}
+                  <View
+                    className={styles.relatedBuild}
+                    onClick={e => goToBuildDetail(approval, e)}
+                  >
+                    <View className={styles.buildInfo}>
+                      <Text className={styles.buildLabel}>关联构建</Text>
+                      <Text className={styles.buildLink}>#{approval.buildNumber} 查看详情 →</Text>
+                    </View>
+                  </View>
+
+                  <View className={styles.approverSection}>
+                    <Text className={styles.sectionLabel}>审批流程</Text>
+                    <View className={styles.approverFlow}>
+                      {approval.approvers.map((name, idx) => {
+                        const isCurrent = name === approval.currentApprover && approval.status === 'pending'
+                        const isApproved = approval.status === 'approved' || idx < approval.approvers.indexOf(approval.currentApprover)
+                        return (
+                          <View
+                            key={idx}
+                            className={classnames(
+                              styles.approverNode,
+                              isCurrent && styles.current,
+                              isApproved && approval.status !== 'pending' && styles.done
+                            )}
+                          >
+                            <View className={styles.approverDot}>
+                              <Text>{isApproved && approval.status !== 'pending' ? '✓' : idx + 1}</Text>
+                            </View>
+                            <Text className={styles.approverName}>{name}</Text>
+                            {idx < approval.approvers.length - 1 && (
+                              <View className={styles.approverLine} />
+                            )}
+                          </View>
+                        )
+                      })}
+                    </View>
+                  </View>
                 </View>
-              </View>
+              )}
+
+              {!expandedId && (
+                <Text className={styles.expandHint}>点击展开详情 ▼</Text>
+              )}
 
               {approval.status === 'pending' && (
                 <View className={styles.actions} onClick={e => e.stopPropagation()}>

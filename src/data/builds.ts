@@ -1,6 +1,6 @@
 import type { Build, BuildPhase } from '@/types'
 
-const generatePhases = (status: string): BuildPhase[] => {
+export const generatePhases = (status: string): BuildPhase[] => {
   const phaseTemplates = [
     { name: '代码检出', logs: ['Cloning into \'repo\'...', 'Checking connectivity... done.', 'HEAD is now at abc1234...'] },
     { name: '依赖安装', logs: ['npm install', 'added 1234 packages in 45s', 'npm audit: 0 vulnerabilities'] },

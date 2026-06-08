@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import classnames from 'classnames'
 import StatCard from '@/components/StatCard'
 import BuildCard from '@/components/BuildCard'
 import { teams } from '@/data/projects'
-import { recentBuilds } from '@/data/builds'
-import { getFavoritePipelines } from '@/data/pipelines'
-import { getPendingApprovals } from '@/data/approvals'
 import { useAppStore } from '@/store/useAppStore'
 import { userProfile } from '@/data/notifications'
 import styles from './index.module.scss'
@@ -16,6 +13,12 @@ const HomePage: React.FC = () => {
   const currentTeam = useAppStore(state => state.currentTeam)
   const setCurrentTeam = useAppStore(state => state.setCurrentTeam)
   const unreadCount = useAppStore(state => state.unreadCount)
+  const getBuildsByTeam = useAppStore(state => state.getBuildsByTeam)
+  const getFavoritePipelines = useAppStore(state => state.getFavoritePipelines)
+  const getTeamStats = useAppStore(state => state.getTeamStats)
+  const getApprovalsByTeam = useAppStore(state => state.getApprovalsByTeam)
+  const favoritePipelines = useAppStore(state => state.favoritePipelines)
+
   const [loading, setLoading] = useState(false)
   const [statusBarHeight, setStatusBarHeight] = useState(20)
 
@@ -37,6 +40,34 @@ const HomePage: React.FC = () => {
     }, 1000)
   })
 
+  const teamStats = useMemo(() => {
+    return getTeamStats(currentTeam)
+  }, [currentTeam, getTeamStats])
+
+  const recentBuilds = useMemo(() => {
+    return getBuildsByTeam(currentTeam)
+  }, [currentTeam, getBuildsByTeam])
+
+  const favoriteCount = useMemo(() => {
+    const favPipes = getFavoritePipelines()
+    if (currentTeam === 'all') return favPipes.length
+    return favPipes.filter(p => {
+      const teamProjectMap: Record<string, string[]> = {
+        'team-1': ['proj-1', 'proj-7'],
+        'team-2': ['proj-2', 'proj-3', 'proj-8'],
+        'team-3': ['proj-4'],
+        'team-4': ['proj-5'],
+        'team-5': ['proj-6']
+      }
+      const projectIds = teamProjectMap[currentTeam] || []
+      return projectIds.includes(p.projectId)
+    }).length
+  }, [currentTeam, favoritePipelines, getFavoritePipelines])
+
+  const pendingCount = useMemo(() => {
+    return getApprovalsByTeam(currentTeam).filter(a => a.status === 'pending').length
+  }, [currentTeam, getApprovalsByTeam])
+
   const handleTeamChange = (teamId: string) => {
     setCurrentTeam(teamId)
   }
@@ -57,10 +88,7 @@ const HomePage: React.FC = () => {
     Taro.switchTab({ url: '/pages/pipeline/index' })
   }
 
-  const favoriteCount = getFavoritePipelines().length
-  const pendingCount = getPendingApprovals().length
-  const successRate = 91.5
-  const weekBuilds = 56
+  const teamName = teams.find(t => t.id === currentTeam)?.name || '全部团队'
 
   return (
     <ScrollView scrollY className={styles.page}>
@@ -79,26 +107,28 @@ const HomePage: React.FC = () => {
             <Text className={styles.role}>{userProfile.role} · {userProfile.team}</Text>
           </View>
           <View className={styles.teamSelect} onClick={() => {}}>
-            <Text>{teams.find(t => t.id === currentTeam)?.name || '全部团队'}</Text>
+            <Text>{teamName}</Text>
             <Text>▼</Text>
           </View>
         </View>
         <Text className={styles.greeting}>今天是工作日，加油！</Text>
-        <Text className={styles.subtitle}>共有 {weekBuilds} 次构建，成功率 {successRate}%</Text>
+        <Text className={styles.subtitle}>
+          共 {teamStats.projectCount} 个项目 · {teamStats.pipelineCount} 条流水线
+        </Text>
       </View>
 
       <View className={styles.statsGrid}>
         <StatCard
-          value={weekBuilds}
+          value={teamStats.weekBuilds}
           label="本周构建"
           trend="12%"
           trendUp
         />
         <StatCard
-          value={`${successRate}%`}
+          value={`${teamStats.successRate}%`}
           label="成功率"
           trend="2.3%"
-          trendUp
+          trendUp={teamStats.successRate >= 90}
         />
       </View>
 
@@ -110,10 +140,7 @@ const HomePage: React.FC = () => {
           </View>
           <View className={styles.actionItem} onClick={goToApproval}>
             <View className={classnames(styles.icon, styles.warning)}>
-              {pendingCount > 0 && (
-                <Text style={{ color: '#ff7d00' }}>📋</Text>
-              )}
-              {pendingCount === 0 && <Text>📋</Text>}
+              <Text>📋</Text>
             </View>
             <Text className={styles.label}>待审批 ({pendingCount})</Text>
           </View>
@@ -146,9 +173,15 @@ const HomePage: React.FC = () => {
           <Text className={styles.more} onClick={goToPipeline}>查看全部 →</Text>
         </View>
         <View className={styles.buildList}>
-          {recentBuilds.slice(0, 4).map(build => (
-            <BuildCard key={build.id} build={build} />
-          ))}
+          {recentBuilds.length > 0 ? (
+            recentBuilds.slice(0, 4).map(build => (
+              <BuildCard key={build.id} build={build} />
+            ))
+          ) : (
+            <View className={styles.emptyState}>
+              <Text>暂无构建记录</Text>
+            </View>
+          )}
         </View>
       </View>
     </ScrollView>

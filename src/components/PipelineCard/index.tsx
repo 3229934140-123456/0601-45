@@ -16,11 +16,17 @@ interface PipelineCardProps {
 const PipelineCard: React.FC<PipelineCardProps> = ({ pipeline, onFavoriteChange }) => {
   const toggleFavorite = useAppStore(state => state.toggleFavorite)
   const isFavorite = useAppStore(state => state.isFavorite(pipeline.id))
+  const getLatestBuildByPipeline = useAppStore(state => state.getLatestBuildByPipeline)
 
   const handleCardClick = () => {
-    Taro.navigateTo({
-      url: `/pages/build-detail/index?buildId=build-1&pipelineId=${pipeline.id}`
-    })
+    const latestBuild = getLatestBuildByPipeline(pipeline.id)
+    if (latestBuild) {
+      Taro.navigateTo({
+        url: `/pages/build-detail/index?buildId=${latestBuild.id}`
+      })
+    } else {
+      Taro.showToast({ title: '暂无构建记录', icon: 'none' })
+    }
   }
 
   const handleFavorite = (e: React.MouseEvent) => {

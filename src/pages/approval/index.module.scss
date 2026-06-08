@@ -68,6 +68,11 @@
   padding: $spacing-lg;
   box-shadow: $shadow-card;
   margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
 
   .header {
     display: flex;
@@ -136,7 +141,6 @@
     justify-content: space-between;
     font-size: $font-size-xs;
     color: $color-text-tertiary;
-    margin-bottom: $spacing-md;
 
     .metaItem {
       display: flex;
@@ -145,22 +149,144 @@
     }
   }
 
-  .impactScope {
+  .expandHint {
+    text-align: center;
     font-size: $font-size-xs;
     color: $color-text-tertiary;
-    margin-bottom: $spacing-md;
+    padding-top: $spacing-sm;
+  }
+
+  .expandedSection {
+    margin-top: $spacing-md;
     padding-top: $spacing-md;
     border-top: 1rpx solid $color-divider;
 
-    .label {
+    .sectionLabel {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      color: $color-text-primary;
+      margin-bottom: $spacing-sm;
+    }
+  }
+
+  .impactSection {
+    margin-bottom: $spacing-md;
+
+    .impactText {
+      font-size: $font-size-sm;
       color: $color-text-secondary;
-      margin-right: 8rpx;
+      line-height: 1.6;
+      padding: $spacing-sm $spacing-md;
+      background: $color-warning-bg;
+      border-radius: $radius-sm;
+      border-left: 6rpx solid $color-warning;
+    }
+  }
+
+  .relatedBuild {
+    margin-bottom: $spacing-md;
+    padding: $spacing-md;
+    background: $color-bg-block;
+    border-radius: $radius-sm;
+
+    .buildInfo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .buildLabel {
+        font-size: $font-size-sm;
+        color: $color-text-tertiary;
+      }
+
+      .buildLink {
+        font-size: $font-size-sm;
+        color: $color-primary;
+        font-weight: $font-weight-medium;
+      }
+    }
+  }
+
+  .approverSection {
+    .approverFlow {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: $spacing-sm 0;
+    }
+
+    .approverNode {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+
+      .approverDot {
+        width: 48rpx;
+        height: 48rpx;
+        border-radius: 50%;
+        background: $color-bg-block;
+        color: $color-text-tertiary;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: $font-size-xs;
+        font-weight: $font-weight-semibold;
+        margin-bottom: $spacing-xs;
+      }
+
+      .approverName {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        text-align: center;
+      }
+
+      &.current {
+        .approverDot {
+          background: $color-warning-bg;
+          color: $color-warning;
+          animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .approverName {
+          color: $color-warning;
+          font-weight: $font-weight-medium;
+        }
+      }
+
+      &.done {
+        .approverDot {
+          background: $color-success-bg;
+          color: $color-success;
+        }
+
+        .approverName {
+          color: $color-success;
+        }
+      }
+
+      .approverLine {
+        position: absolute;
+        top: 24rpx;
+        left: 50%;
+        width: 100%;
+        height: 2rpx;
+        background: $color-border-light;
+      }
+
+      &:last-child .approverLine {
+        display: none;
+      }
     }
   }
 
   .actions {
     display: flex;
     gap: $spacing-md;
+    margin-top: $spacing-md;
+    padding-top: $spacing-md;
+    border-top: 1rpx solid $color-divider;
 
     .btn {
       flex: 1;
@@ -189,37 +315,6 @@
       }
     }
   }
-
-  .approvers {
-    display: flex;
-    align-items: center;
-    gap: $spacing-sm;
-    padding-top: $spacing-md;
-    border-top: 1rpx solid $color-divider;
-
-    .label {
-      font-size: $font-size-xs;
-      color: $color-text-tertiary;
-    }
-
-    .approverList {
-      display: flex;
-      gap: 8rpx;
-
-      .approver {
-        font-size: $font-size-xs;
-        padding: 4rpx 12rpx;
-        background: $color-bg-block;
-        border-radius: $radius-xs;
-        color: $color-text-secondary;
-
-        &.current {
-          background: $color-warning-bg;
-          color: $color-warning;
-        }
-      }
-    }
-  }
 }
 
 .emptyState {
@@ -238,5 +333,14 @@
   .text {
     font-size: $font-size-md;
     color: $color-text-tertiary;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 125, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12rpx rgba(255, 125, 0, 0);
   }
 }

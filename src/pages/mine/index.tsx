@@ -1,22 +1,31 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import { useAppStore } from '@/store/useAppStore'
 import { userProfile } from '@/data/notifications'
-import { getFavoritePipelines } from '@/data/pipelines'
-import { getPendingApprovals } from '@/data/approvals'
 import type { UserProfile } from '@/types'
 import styles from './index.module.scss'
 
 const MinePage: React.FC = () => {
   const notificationSettings = useAppStore(state => state.userProfile.notificationSettings)
   const toggleNotificationSetting = useAppStore(state => state.toggleNotificationSetting)
-  const favoritePipelines = getFavoritePipelines()
-  const pendingApprovals = getPendingApprovals()
+  const getFavoritePipelines = useAppStore(state => state.getFavoritePipelines)
+  const getApprovalsByTeam = useAppStore(state => state.getApprovalsByTeam)
+  const favoritePipelinesStore = useAppStore(state => state.favoritePipelines)
 
   const [statusBarHeight, setStatusBarHeight] = useState(20)
   const [profile] = useState<UserProfile>(userProfile)
+
+  const favoritePipelines = useMemo(() => getFavoritePipelines(), [
+    getFavoritePipelines,
+    favoritePipelinesStore
+  ])
+
+  const pendingApprovals = useMemo(
+    () => getApprovalsByTeam('all').filter(a => a.status === 'pending'),
+    [getApprovalsByTeam]
+  )
 
   useEffect(() => {
     const sysInfo = Taro.getSystemInfoSync()

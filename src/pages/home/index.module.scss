@@ -186,3 +186,10 @@
     background-position: 200% 0;
   }
 }
+
+.emptyState {
+  padding: 80rpx 0;
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}

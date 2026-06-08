@@ -254,3 +254,61 @@
     }
   }
 }
+
+.notFoundPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 0 $page-padding;
+
+  .notFoundIcon {
+    font-size: 160rpx;
+    margin-bottom: $spacing-lg;
+    opacity: 0.3;
+  }
+
+  .notFoundTitle {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-sm;
+  }
+
+  .notFoundDesc {
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+    margin-bottom: $spacing-xl;
+    text-align: center;
+  }
+
+  .notFoundActions {
+    display: flex;
+    gap: $spacing-md;
+    width: 100%;
+    max-width: 600rpx;
+
+    .btn {
+      flex: 1;
+      height: 80rpx;
+      border-radius: $radius-button;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: $font-size-md;
+      font-weight: $font-weight-medium;
+      border: none;
+
+      &.secondary {
+        background: $color-bg-block;
+        color: $color-text-secondary;
+      }
+
+      &.primary {
+        background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+        color: $color-text-white;
+      }
+    }
+  }
+}
