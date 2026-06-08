@@ -1,0 +1,242 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.header {
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: $shadow-float;
+
+  .filterTabs {
+    display: flex;
+    gap: $spacing-lg;
+
+    .tab {
+      position: relative;
+      padding: $spacing-sm 0;
+      font-size: $font-size-md;
+      color: $color-text-secondary;
+
+      &.active {
+        color: $color-primary;
+        font-weight: $font-weight-semibold;
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 48rpx;
+          height: 6rpx;
+          background: $color-primary;
+          border-radius: 3rpx;
+        }
+      }
+
+      .count {
+        margin-left: 8rpx;
+        font-size: $font-size-xs;
+        background: $color-bg-block;
+        color: $color-text-tertiary;
+        padding: 2rpx 12rpx;
+        border-radius: $radius-round;
+      }
+
+      &.active .count {
+        background: $color-primary-bg;
+        color: $color-primary;
+      }
+    }
+  }
+}
+
+.approvalList {
+  padding: $spacing-md $page-padding;
+}
+
+.approvalCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-sm;
+    padding: 0;
+    box-shadow: none;
+    position: static;
+  }
+
+  .typeTag {
+    font-size: $font-size-xs;
+    padding: 4rpx 12rpx;
+    border-radius: $radius-xs;
+    background: $color-primary-bg;
+    color: $color-primary;
+  }
+
+  .statusTag {
+    font-size: $font-size-xs;
+    padding: 6rpx 16rpx;
+    border-radius: $radius-xs;
+
+    &.pending {
+      background: $color-warning-bg;
+      color: $color-warning;
+    }
+
+    &.approved {
+      background: $color-success-bg;
+      color: $color-success;
+    }
+
+    &.rejected {
+      background: $color-error-bg;
+      color: $color-error;
+    }
+  }
+
+  .title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-sm;
+  }
+
+  .projectInfo {
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+    margin-bottom: $spacing-md;
+  }
+
+  .description {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    line-height: 1.6;
+    margin-bottom: $spacing-md;
+    padding: $spacing-md;
+    background: $color-bg-block;
+    border-radius: $radius-sm;
+  }
+
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    margin-bottom: $spacing-md;
+
+    .metaItem {
+      display: flex;
+      align-items: center;
+      gap: 6rpx;
+    }
+  }
+
+  .impactScope {
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    margin-bottom: $spacing-md;
+    padding-top: $spacing-md;
+    border-top: 1rpx solid $color-divider;
+
+    .label {
+      color: $color-text-secondary;
+      margin-right: 8rpx;
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: $spacing-md;
+
+    .btn {
+      flex: 1;
+      height: 72rpx;
+      border-radius: $radius-button;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      border: none;
+
+      &.reject {
+        background: $color-bg-block;
+        color: $color-text-secondary;
+      }
+
+      &.approve {
+        background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+        color: $color-text-white;
+      }
+
+      &:active {
+        opacity: 0.9;
+        transform: scale(0.98);
+      }
+    }
+  }
+
+  .approvers {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding-top: $spacing-md;
+    border-top: 1rpx solid $color-divider;
+
+    .label {
+      font-size: $font-size-xs;
+      color: $color-text-tertiary;
+    }
+
+    .approverList {
+      display: flex;
+      gap: 8rpx;
+
+      .approver {
+        font-size: $font-size-xs;
+        padding: 4rpx 12rpx;
+        background: $color-bg-block;
+        border-radius: $radius-xs;
+        color: $color-text-secondary;
+
+        &.current {
+          background: $color-warning-bg;
+          color: $color-warning;
+        }
+      }
+    }
+  }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx $page-padding;
+
+  .icon {
+    font-size: 120rpx;
+    margin-bottom: $spacing-md;
+    opacity: 0.3;
+  }
+
+  .text {
+    font-size: $font-size-md;
+    color: $color-text-tertiary;
+  }
+}

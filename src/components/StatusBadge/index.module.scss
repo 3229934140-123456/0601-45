@@ -1,0 +1,82 @@
+@use '@/styles/variables.scss' as *;
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 16rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+  line-height: 1;
+  white-space: nowrap;
+
+  .dot {
+    width: 12rpx;
+    height: 12rpx;
+    border-radius: 50%;
+  }
+}
+
+.success {
+  background: $color-success-bg;
+  color: $color-success;
+
+  .dot {
+    background: $color-success;
+  }
+}
+
+.failed {
+  background: $color-error-bg;
+  color: $color-error;
+
+  .dot {
+    background: $color-error;
+  }
+}
+
+.running {
+  background: $color-warning-bg;
+  color: $color-warning;
+
+  .dot {
+    background: $color-warning;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+.pending {
+  background: $color-bg-block;
+  color: $color-text-tertiary;
+
+  .dot {
+    background: $color-text-tertiary;
+  }
+}
+
+.cancelled {
+  background: $color-bg-block;
+  color: $color-text-tertiary;
+
+  .dot {
+    background: $color-text-tertiary;
+  }
+}
+
+.skipped {
+  background: $color-bg-block;
+  color: $color-text-disabled;
+
+  .dot {
+    background: $color-text-disabled;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

@@ -1,0 +1,256 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 160rpx;
+}
+
+.header {
+  background: $color-bg-card;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+
+  .statusRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-md;
+  }
+
+  .buildTitle {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    margin-bottom: 8rpx;
+  }
+
+  .buildNumber {
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+  }
+
+  .projectInfo {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-md;
+  }
+
+  .metaGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-md;
+    padding-top: $spacing-md;
+    border-top: 1rpx solid $color-divider;
+
+    .metaItem {
+      text-align: center;
+
+      .value {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+      }
+
+      .label {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+    }
+  }
+}
+
+.section {
+  background: $color-bg-card;
+  margin-bottom: $spacing-md;
+
+  .sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-lg;
+    border-bottom: 1rpx solid $color-divider;
+
+    .title {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+    }
+
+    .action {
+      font-size: $font-size-sm;
+      color: $color-primary;
+    }
+  }
+
+  .sectionContent {
+    padding: $spacing-lg;
+  }
+}
+
+.phaseList {
+  padding: $spacing-md;
+}
+
+.commitInfo {
+  .commitMessage {
+    font-size: $font-size-md;
+    color: $color-text-primary;
+    margin-bottom: $spacing-sm;
+    line-height: 1.5;
+  }
+
+  .commitHash {
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    font-family: monospace;
+    background: $color-bg-block;
+    padding: 6rpx 12rpx;
+    border-radius: $radius-xs;
+    display: inline-block;
+  }
+
+  .commitMeta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: $spacing-md;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.remarkSection {
+  .remarkContent {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    line-height: 1.6;
+    background: $color-bg-block;
+    padding: $spacing-md;
+    border-radius: $radius-sm;
+  }
+
+  .remarkEmpty {
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+    text-align: center;
+    padding: $spacing-md;
+  }
+
+  .remarkInput {
+    width: 100%;
+    min-height: 120rpx;
+    padding: $spacing-md;
+    font-size: $font-size-sm;
+    border: 1rpx solid $color-border;
+    border-radius: $radius-sm;
+    background: $color-bg-card;
+    box-sizing: border-box;
+  }
+
+  .remarkActions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: $spacing-sm;
+    gap: $spacing-sm;
+
+    .btn {
+      padding: 12rpx 24rpx;
+      font-size: $font-size-sm;
+      border-radius: $radius-button;
+      border: none;
+
+      &.cancel {
+        background: $color-bg-block;
+        color: $color-text-secondary;
+      }
+
+      &.save {
+        background: $color-primary;
+        color: $color-text-white;
+      }
+    }
+  }
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  display: flex;
+  gap: $spacing-md;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+
+  .btn {
+    flex: 1;
+    height: 88rpx;
+    border-radius: $radius-button;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+    border: none;
+    gap: 8rpx;
+
+    &.secondary {
+      background: $color-bg-block;
+      color: $color-text-secondary;
+    }
+
+    &.primary {
+      background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+      color: $color-text-white;
+    }
+
+    &.danger {
+      background: $color-error;
+      color: $color-text-white;
+    }
+
+    &:active {
+      opacity: 0.9;
+      transform: scale(0.98);
+    }
+  }
+
+  .btnSmall {
+    padding: 0 $spacing-lg;
+    flex: none;
+  }
+}
+
+.actionSheet {
+  padding: $spacing-lg;
+
+  .actionItem {
+    display: flex;
+    align-items: center;
+    padding: $spacing-lg 0;
+    border-bottom: 1rpx solid $color-divider;
+    gap: $spacing-md;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .icon {
+      font-size: 36rpx;
+    }
+
+    .text {
+      flex: 1;
+      font-size: $font-size-md;
+      color: $color-text-primary;
+    }
+
+    &.danger .text {
+      color: $color-error;
+    }
+  }
+}

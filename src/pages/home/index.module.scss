@@ -1,0 +1,188 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: 48rpx 32rpx 80rpx;
+  color: $color-text-white;
+
+  .userInfo {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    margin-bottom: $spacing-xl;
+
+    .avatar {
+      width: 96rpx;
+      height: 96rpx;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      border: 4rpx solid rgba(255, 255, 255, 0.3);
+    }
+
+    .info {
+      flex: 1;
+
+      .name {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-semibold;
+        margin-bottom: 8rpx;
+      }
+
+      .role {
+        font-size: $font-size-sm;
+        opacity: 0.85;
+      }
+    }
+
+    .teamSelect {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 12rpx 24rpx;
+      border-radius: $radius-button;
+      font-size: $font-size-sm;
+      display: flex;
+      align-items: center;
+      gap: 8rpx;
+    }
+  }
+
+  .greeting {
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-xs;
+    opacity: 0.9;
+  }
+
+  .subtitle {
+    font-size: $font-size-sm;
+    opacity: 0.7;
+  }
+}
+
+.statsGrid {
+  display: flex;
+  gap: $spacing-md;
+  padding: 0 $page-padding;
+  margin-top: -48rpx;
+  margin-bottom: $spacing-lg;
+
+  .statCard {
+    flex: 1;
+  }
+}
+
+.section {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-lg;
+
+  .sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-md;
+
+    .title {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+    }
+
+    .more {
+      font-size: $font-size-sm;
+      color: $color-text-tertiary;
+    }
+  }
+}
+
+.quickActions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+
+  .actionItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+
+    .icon {
+      width: 88rpx;
+      height: 88rpx;
+      border-radius: $radius-md;
+      background: $color-primary-bg;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40rpx;
+
+      &.warning {
+        background: $color-warning-bg;
+      }
+
+      &.success {
+        background: $color-success-bg;
+      }
+
+      &.info {
+        background: $color-info-bg;
+      }
+    }
+
+    .label {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+  }
+}
+
+.teamFilter {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md $page-padding;
+  overflow-x: auto;
+
+  .filterItem {
+    padding: 12rpx 28rpx;
+    border-radius: $radius-button;
+    font-size: $font-size-sm;
+    white-space: nowrap;
+    background: $color-bg-card;
+    color: $color-text-secondary;
+    border: 1rpx solid $color-border;
+
+    &.active {
+      background: $color-primary;
+      color: $color-text-white;
+      border-color: $color-primary;
+    }
+  }
+}
+
+.buildList {
+  padding: 0 $page-padding;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: $radius-xs;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

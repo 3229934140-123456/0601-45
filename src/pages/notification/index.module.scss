@@ -1,0 +1,181 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 120rpx;
+}
+
+.header {
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: $shadow-float;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+  }
+
+  .markAllRead {
+    font-size: $font-size-sm;
+    color: $color-primary;
+  }
+}
+
+.typeFilter {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-bottom: 1rpx solid $color-divider;
+  overflow-x: auto;
+
+  .filterItem {
+    padding: 10rpx 24rpx;
+    border-radius: $radius-button;
+    font-size: $font-size-sm;
+    white-space: nowrap;
+    background: $color-bg-block;
+    color: $color-text-secondary;
+
+    &.active {
+      background: $color-primary;
+      color: $color-text-white;
+    }
+  }
+}
+
+.notificationList {
+  padding: $spacing-md $page-padding;
+}
+
+.notificationItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+  position: relative;
+
+  &.unread {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 24rpx;
+      left: 24rpx;
+      width: 16rpx;
+      height: 16rpx;
+      background: $color-error;
+      border-radius: 50%;
+    }
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+    padding: 0;
+    box-shadow: none;
+    position: static;
+  }
+
+  .icon {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28rpx;
+    flex-shrink: 0;
+
+    &.build_failed {
+      background: $color-error-bg;
+    }
+
+    &.build_success {
+      background: $color-success-bg;
+    }
+
+    &.approval_pending {
+      background: $color-warning-bg;
+    }
+
+    &.approval_done {
+      background: $color-info-bg;
+    }
+
+    &.system {
+      background: $color-bg-block;
+    }
+  }
+
+  .contentWrapper {
+    flex: 1;
+    min-width: 0;
+
+    .title {
+      font-size: $font-size-md;
+      font-weight: $font-weight-medium;
+      color: $color-text-primary;
+      margin-bottom: 8rpx;
+      @include text-ellipsis;
+    }
+
+    .content {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      line-height: 1.5;
+      @include text-ellipsis-multi(2);
+    }
+  }
+
+  .time {
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    margin-top: $spacing-sm;
+  }
+
+  .actions {
+    display: flex;
+    gap: $spacing-sm;
+    margin-top: $spacing-md;
+    padding-top: $spacing-md;
+    border-top: 1rpx solid $color-divider;
+
+    .actionBtn {
+      font-size: $font-size-xs;
+      color: $color-primary;
+      padding: 8rpx 16rpx;
+      background: $color-primary-bg;
+      border-radius: $radius-sm;
+    }
+  }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx $page-padding;
+
+  .icon {
+    font-size: 120rpx;
+    margin-bottom: $spacing-md;
+    opacity: 0.3;
+  }
+
+  .text {
+    font-size: $font-size-md;
+    color: $color-text-tertiary;
+  }
+}

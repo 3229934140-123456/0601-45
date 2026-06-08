@@ -1,0 +1,117 @@
+@use '@/styles/variables.scss' as *;
+
+.pipelineCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-md;
+
+    .left {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      min-width: 0;
+    }
+
+    .name {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      @include text-ellipsis;
+    }
+
+    .favorite {
+      width: 48rpx;
+      height: 48rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32rpx;
+
+      &.active {
+        color: #ff7d00;
+      }
+
+      &.inactive {
+        color: $color-text-disabled;
+      }
+    }
+  }
+
+  .projectInfo {
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+    margin-bottom: $spacing-md;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    .branch {
+      background: $color-bg-block;
+      padding: 4rpx 12rpx;
+      border-radius: $radius-xs;
+      font-size: $font-size-xs;
+    }
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: $spacing-md;
+    border-top: 1rpx solid $color-divider;
+
+    .leftInfo {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+    }
+
+    .infoItem {
+      display: flex;
+      align-items: center;
+      gap: 8rpx;
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+
+    .triggerUser {
+      font-size: $font-size-sm;
+      color: $color-text-tertiary;
+    }
+  }
+
+  .stats {
+    display: flex;
+    gap: $spacing-lg;
+    margin-bottom: $spacing-md;
+
+    .statItem {
+      .statValue {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+      }
+
+      .statLabel {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        margin-top: 4rpx;
+      }
+    }
+  }
+}

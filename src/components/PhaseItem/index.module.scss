@@ -1,0 +1,118 @@
+@use '@/styles/variables.scss' as *;
+
+.phaseItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+  overflow: hidden;
+
+  .header {
+    display: flex;
+    align-items: center;
+    padding: $spacing-lg;
+    gap: $spacing-md;
+
+    .statusIcon {
+      width: 40rpx;
+      height: 40rpx;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24rpx;
+      flex-shrink: 0;
+    }
+
+    .success .statusIcon {
+      background: $color-success-bg;
+      color: $color-success;
+    }
+
+    .failed .statusIcon {
+      background: $color-error-bg;
+      color: $color-error;
+    }
+
+    .running .statusIcon {
+      background: $color-warning-bg;
+      color: $color-warning;
+
+      &::before {
+        content: '';
+        width: 20rpx;
+        height: 20rpx;
+        border: 3rpx solid $color-warning;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    .pending .statusIcon,
+    .cancelled .statusIcon,
+    .skipped .statusIcon {
+      background: $color-bg-block;
+      color: $color-text-tertiary;
+    }
+
+    .phaseInfo {
+      flex: 1;
+      min-width: 0;
+
+      .name {
+        font-size: $font-size-md;
+        font-weight: $font-weight-medium;
+        color: $color-text-primary;
+        margin-bottom: 6rpx;
+      }
+
+      .meta {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+    }
+
+    .expandIcon {
+      font-size: 28rpx;
+      color: $color-text-tertiary;
+      transition: transform $transition-base;
+
+      &.expanded {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  .logs {
+    background: #1d2129;
+    color: #c9cdd4;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 22rpx;
+    line-height: 1.6;
+    padding: $spacing-md;
+    max-height: 400rpx;
+    overflow-y: auto;
+    border-top: 1rpx solid $color-divider;
+
+    .logLine {
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-bottom: 4rpx;
+    }
+  }
+
+  &.active {
+    .header {
+      background: $color-primary-bg;
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

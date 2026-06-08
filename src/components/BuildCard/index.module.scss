@@ -1,0 +1,62 @@
+@use '@/styles/variables.scss' as *;
+
+.buildCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $spacing-sm;
+
+    .title {
+      font-size: $font-size-md;
+      font-weight: $font-weight-medium;
+      color: $color-text-primary;
+      flex: 1;
+      @include text-ellipsis;
+    }
+
+    .buildNumber {
+      font-size: $font-size-sm;
+      color: $color-text-tertiary;
+      margin-left: $spacing-sm;
+    }
+  }
+
+  .commit {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-md;
+    @include text-ellipsis;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+
+    .left {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+    }
+
+    .metaItem {
+      display: flex;
+      align-items: center;
+      gap: 6rpx;
+    }
+  }
+}
